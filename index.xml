@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>老三炮的笔记</title>
+    <link>https://woshilixiaohao.github.io/</link>
+    <description>Recent content on 老三炮的笔记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="https://woshilixiaohao.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/</guid>
+      <description>缓Elasticsearch #  </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/nosql/redis/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/nosql/redis/</guid>
+      <description>缓存数据库 redis #  </description>
+    </item>
+    
+  </channel>
+</rss>
