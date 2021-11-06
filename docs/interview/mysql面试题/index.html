@@ -3,16 +3,20 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="缓Elasticsearch #  ">
+<meta name="description" content="1、全局锁使用场景？mysqldump。set global readonly=true
+2、表锁、MDL、如何安全地给小表加字段
+3、行锁，减小锁冲突，死锁和死锁检测">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
-<meta property="og:description" content="缓Elasticsearch #  " />
+<meta property="og:description" content="1、全局锁使用场景？mysqldump。set global readonly=true
+2、表锁、MDL、如何安全地给小表加字段
+3、行锁，减小锁冲突，死锁和死锁检测" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" /><meta property="article:section" content="docs" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" /><meta property="article:section" content="docs" />
 
 
 
-<title>Elasticsearch | 老三炮的笔记</title>
+<title>Mysql面试题 | 老三炮的笔记</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
@@ -84,7 +88,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class=" active">Mysql面试题</a>
   
 
         </li>
@@ -304,7 +308,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class=" active">Elasticsearch</a>
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
   
 
         </li>
@@ -369,7 +373,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>Elasticsearch</strong>
+  <strong>Mysql面试题</strong>
 
   <label for="toc-control">
     
@@ -383,11 +387,7 @@ https://github.com/alex-shpak/hugo-book
   <aside class="hidden clearfix">
     
   
-<nav id="TableOfContents">
-  <ul>
-    <li><a href="#缓elasticsearch">缓Elasticsearch</a></li>
-  </ul>
-</nav>
+<nav id="TableOfContents"></nav>
 
 
 
@@ -398,10 +398,9 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h2 id="缓elasticsearch">
-  缓Elasticsearch
-  <a class="anchor" href="#%e7%bc%93elasticsearch">#</a>
-</h2>
+  <article class="markdown"><p>1、全局锁使用场景？mysqldump。set global readonly=true</p>
+<p>2、表锁、MDL、如何安全地给小表加字段</p>
+<p>3、行锁，减小锁冲突，死锁和死锁检测</p>
 </article>
  
       
@@ -441,11 +440,7 @@ https://github.com/alex-shpak/hugo-book
       <div class="book-toc-content">
         
   
-<nav id="TableOfContents">
-  <ul>
-    <li><a href="#缓elasticsearch">缓Elasticsearch</a></li>
-  </ul>
-</nav>
+<nav id="TableOfContents"></nav>
 
 
  

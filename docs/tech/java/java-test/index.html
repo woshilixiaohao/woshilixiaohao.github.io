@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="缓Elasticsearch #  ">
+<meta name="description" content="mock接口或者抽象类 #  引入jar包 #  import 类 #  import static org.assertj.core.api.Assertions.assertThat; import static org.mockito.Matchers.any; import static org.mockito.Matchers.eq; import static org.mockito.Mockito.mock; import static org.mockito.Mockito.when; private PaasRepository repository = mock(PaasRepository.class); mock静态方法 #  PowerMockito.mockStatic(EnvUtil.class); when(EnvUtil.getTenantId()).thenReturn(&#34;oki&#34;); mock静态变量 #  import org.powermock.reflect.Whitebox;Whitebox.setInternalState(NiaPatchService.class, &quot;instance&quot;, (NiaPatchService) null);">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
-<meta property="og:description" content="缓Elasticsearch #  " />
+<meta property="og:description" content="mock接口或者抽象类 #  引入jar包 #  import 类 #  import static org.assertj.core.api.Assertions.assertThat; import static org.mockito.Matchers.any; import static org.mockito.Matchers.eq; import static org.mockito.Mockito.mock; import static org.mockito.Mockito.when; private PaasRepository repository = mock(PaasRepository.class); mock静态方法 #  PowerMockito.mockStatic(EnvUtil.class); when(EnvUtil.getTenantId()).thenReturn(&#34;oki&#34;); mock静态变量 #  import org.powermock.reflect.Whitebox;Whitebox.setInternalState(NiaPatchService.class, &quot;instance&quot;, (NiaPatchService) null);" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" /><meta property="article:section" content="docs" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/java/java-test/" /><meta property="article:section" content="docs" />
 
 
 
-<title>Elasticsearch | 老三炮的笔记</title>
+<title>Java Test | 老三炮的笔记</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
@@ -242,7 +242,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class=" active">Java Test</a>
   
 
         </li>
@@ -304,7 +304,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class=" active">Elasticsearch</a>
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
   
 
         </li>
@@ -369,7 +369,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>Elasticsearch</strong>
+  <strong>Java Test</strong>
 
   <label for="toc-control">
     
@@ -385,7 +385,12 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#缓elasticsearch">缓Elasticsearch</a></li>
+    <li>
+      <ul>
+        <li><a href="#mock接口或者抽象类">mock接口或者抽象类</a></li>
+        <li><a href="#mock静态方法">mock静态方法</a></li>
+      </ul>
+    </li>
   </ul>
 </nav>
 
@@ -398,11 +403,40 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h2 id="缓elasticsearch">
-  缓Elasticsearch
-  <a class="anchor" href="#%e7%bc%93elasticsearch">#</a>
-</h2>
-</article>
+  <article class="markdown"><h3 id="mock接口或者抽象类">
+  mock接口或者抽象类
+  <a class="anchor" href="#mock%e6%8e%a5%e5%8f%a3%e6%88%96%e8%80%85%e6%8a%bd%e8%b1%a1%e7%b1%bb">#</a>
+</h3>
+<h4 id="引入jar包">
+  引入jar包
+  <a class="anchor" href="#%e5%bc%95%e5%85%a5jar%e5%8c%85">#</a>
+</h4>
+<h4 id="import-类">
+  import 类
+  <a class="anchor" href="#import-%e7%b1%bb">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#f92672">import static</span> org.assertj.core.api.Assertions.assertThat<span style="color:#f92672">;</span>
+<span style="color:#f92672">import static</span> org.mockito.Matchers.any<span style="color:#f92672">;</span>
+<span style="color:#f92672">import static</span> org.mockito.Matchers.eq<span style="color:#f92672">;</span>
+<span style="color:#f92672">import static</span> org.mockito.Mockito.mock<span style="color:#f92672">;</span>
+<span style="color:#f92672">import static</span> org.mockito.Mockito.when<span style="color:#f92672">;</span>
+
+<span style="color:#66d9ef">private</span> PaasRepository repository <span style="color:#f92672">=</span> mock<span style="color:#f92672">(</span>PaasRepository<span style="color:#f92672">.</span><span style="color:#a6e22e">class</span><span style="color:#f92672">);</span>
+
+
+</code></pre></div><h3 id="mock静态方法">
+  mock静态方法
+  <a class="anchor" href="#mock%e9%9d%99%e6%80%81%e6%96%b9%e6%b3%95">#</a>
+</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java">PowerMockito<span style="color:#f92672">.</span><span style="color:#a6e22e">mockStatic</span><span style="color:#f92672">(</span>EnvUtil<span style="color:#f92672">.</span><span style="color:#a6e22e">class</span><span style="color:#f92672">);</span>
+when<span style="color:#f92672">(</span>EnvUtil<span style="color:#f92672">.</span><span style="color:#a6e22e">getTenantId</span><span style="color:#f92672">()).</span><span style="color:#a6e22e">thenReturn</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;oki&#34;</span><span style="color:#f92672">);</span>
+</code></pre></div><h4 id="mock静态变量">
+  mock静态变量
+  <a class="anchor" href="#mock%e9%9d%99%e6%80%81%e5%8f%98%e9%87%8f">#</a>
+</h4>
+<pre tabindex="0"><code>import org.powermock.reflect.Whitebox;
+Whitebox.setInternalState(NiaPatchService.class, &quot;instance&quot;, (NiaPatchService) null);
+</code></pre></article>
  
       
 
@@ -443,7 +477,12 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#缓elasticsearch">缓Elasticsearch</a></li>
+    <li>
+      <ul>
+        <li><a href="#mock接口或者抽象类">mock接口或者抽象类</a></li>
+        <li><a href="#mock静态方法">mock静态方法</a></li>
+      </ul>
+    </li>
   </ul>
 </nav>
 

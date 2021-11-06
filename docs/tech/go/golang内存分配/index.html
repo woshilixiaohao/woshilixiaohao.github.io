@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="mspan #  mspan是一个包含起始地址、mspan规格、页的数量等内容的双端链表。
+小对象分配 #  当对一个小对象（&lt;32KB）分配内存时，会将该对象所需的内存大小调整到某个能够容纳该对象的大小等级（size class）， 并查看 mcache 中对应等级的 mspan，通过扫描 mspan 的 freeindex 来确定是否能够进行分配。
+当没有可分配的 mspan 时，会从 mcentral 中获取一个所需大小空间的新的 mspan，从 mcentral 中分配会对其进行加锁， 但一次性获取整个 span 的过程均摊了对 mcentral 加锁的成本。
+如果 mcentral 的 mspan 也为空时，则它也会发生增长，从而从 mheap 中获取一连串的页，作为一个新的 mspan 进行提供。 而如果 mheap 仍然为空，或者没有足够大的对象来进行分配时，则会从操作系统中分配一组新的页（至少 1MB）， 从而均摊与操作系统沟通的成本。
+微对象分配 #  对于过小的微对象（&lt;16B），它们的分配过程与小对象的分配过程基本类似，但是是直接存储在 mcache 上，并由其以 16B 的块大小直接进行管理和释放。
+大对象分配 #  大对象分配非常粗暴，不与 mcache 和 mcentral 沟通，直接绕过并通过 mheap 进行分配。
+Go的内存分配器在分配对象时，根据对象的大小，分成三类：小对象（小于等于16B）、一般对象（大于16B，小于等于32KB）、大对象（大于32KB）。
+大体上的分配流程：
+  32KB 的对象，直接从mheap上分配；
+  &lt;=16B 的对象使用mcache的tiny分配器分配；">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
+<meta property="og:description" content="mspan #  mspan是一个包含起始地址、mspan规格、页的数量等内容的双端链表。
+小对象分配 #  当对一个小对象（&lt;32KB）分配内存时，会将该对象所需的内存大小调整到某个能够容纳该对象的大小等级（size class）， 并查看 mcache 中对应等级的 mspan，通过扫描 mspan 的 freeindex 来确定是否能够进行分配。
+当没有可分配的 mspan 时，会从 mcentral 中获取一个所需大小空间的新的 mspan，从 mcentral 中分配会对其进行加锁， 但一次性获取整个 span 的过程均摊了对 mcentral 加锁的成本。
+如果 mcentral 的 mspan 也为空时，则它也会发生增长，从而从 mheap 中获取一连串的页，作为一个新的 mspan 进行提供。 而如果 mheap 仍然为空，或者没有足够大的对象来进行分配时，则会从操作系统中分配一组新的页（至少 1MB）， 从而均摊与操作系统沟通的成本。
+微对象分配 #  对于过小的微对象（&lt;16B），它们的分配过程与小对象的分配过程基本类似，但是是直接存储在 mcache 上，并由其以 16B 的块大小直接进行管理和释放。
+大对象分配 #  大对象分配非常粗暴，不与 mcache 和 mcentral 沟通，直接绕过并通过 mheap 进行分配。
+Go的内存分配器在分配对象时，根据对象的大小，分成三类：小对象（小于等于16B）、一般对象（大于16B，小于等于32KB）、大对象（大于32KB）。
+大体上的分配流程：
+  32KB 的对象，直接从mheap上分配；
+  &lt;=16B 的对象使用mcache的tiny分配器分配；" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" /><meta property="article:section" content="docs" />
+
+
+
+<title>Golang内存分配 | 老三炮的笔记</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.55521e020be85709ff7a38b6c916ae95096e8bcaa216ac4aaaff69e27781036c.js" integrity="sha256-VVIeAgvoVwn/eji2yRaulQlui8qiFqxKqv9p4neBA2w=" crossorigin="anonymous"></script>
+
+  <script defer src="/sw.min.6f6f90fcb8eb1c49ec389838e6b801d0de19430b8e516902f8d75c3c8bd98739.js" integrity="sha256-b2&#43;Q/LjrHEnsOJg45rgB0N4ZQwuOUWkC&#43;NdcPIvZhzk=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>老三炮的笔记</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/" class="">Interview</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Redis面试题</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/" class="">Tech</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/" class="">Db</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/mysql/" class="">Mysql</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/" class="">Go</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="">Atomic包源码解析</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" class=" active">Golang内存分配</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="">Go常用设计模式</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/" class="">Unsafe包</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/" class="">Java</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/" class="">Mq</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" class="">Kafka</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/" class="">Nosql</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/redis/" class="">Redis</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Golang内存分配</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#mspan">mspan</a></li>
+        <li><a href="#小对象分配">小对象分配</a></li>
+        <li><a href="#微对象分配">微对象分配</a></li>
+        <li><a href="#大对象分配">大对象分配</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h3 id="mspan">
+  mspan
+  <a class="anchor" href="#mspan">#</a>
+</h3>
+<p><code>mspan</code>是一个包含起始地址、<code>mspan</code>规格、页的数量等内容的双端链表。</p>
+<h3 id="小对象分配">
+  小对象分配
+  <a class="anchor" href="#%e5%b0%8f%e5%af%b9%e8%b1%a1%e5%88%86%e9%85%8d">#</a>
+</h3>
+<p>当对一个小对象（&lt;32KB）分配内存时，会将该对象所需的内存大小调整到某个能够容纳该对象的大小等级（size class）， 并查看 mcache 中对应等级的 mspan，通过扫描 mspan 的 <code>freeindex</code> 来确定是否能够进行分配。</p>
+<p>当没有可分配的 mspan 时，会从 mcentral 中获取一个所需大小空间的新的 mspan，从 mcentral 中分配会对其进行加锁， 但一次性获取整个 span 的过程均摊了对 mcentral 加锁的成本。</p>
+<p>如果 mcentral 的 mspan 也为空时，则它也会发生增长，从而从 mheap 中获取一连串的页，作为一个新的 mspan 进行提供。 而如果 mheap 仍然为空，或者没有足够大的对象来进行分配时，则会从操作系统中分配一组新的页（至少 1MB）， 从而均摊与操作系统沟通的成本。</p>
+<h3 id="微对象分配">
+  微对象分配
+  <a class="anchor" href="#%e5%be%ae%e5%af%b9%e8%b1%a1%e5%88%86%e9%85%8d">#</a>
+</h3>
+<p>对于过小的微对象（&lt;16B），它们的分配过程与小对象的分配过程基本类似，但是是直接存储在 mcache 上，并由其以 16B 的块大小直接进行管理和释放。</p>
+<h3 id="大对象分配">
+  大对象分配
+  <a class="anchor" href="#%e5%a4%a7%e5%af%b9%e8%b1%a1%e5%88%86%e9%85%8d">#</a>
+</h3>
+<p>大对象分配非常粗暴，不与 mcache 和 mcentral 沟通，直接绕过并通过 mheap 进行分配。</p>
+<p>Go的内存分配器在分配对象时，根据对象的大小，分成三类：小对象（小于等于16B）、一般对象（大于16B，小于等于32KB）、大对象（大于32KB）。</p>
+<p>大体上的分配流程：</p>
+<ul>
+<li>
+<p>32KB 的对象，直接从mheap上分配；</p>
+</li>
+<li>
+<p>&lt;=16B 的对象使用mcache的tiny分配器分配；</p>
+</li>
+<li>
+<p>(16B,32KB] 的对象，首先计算对象的规格大小，然后使用mcache中相应规格大小的mspan分配；</p>
+</li>
+<li>
+<p>如果mcache没有相应规格大小的mspan，则向mcentral申请</p>
+</li>
+<li>
+<p>如果mcentral没有相应规格大小的mspan，则向mheap申请</p>
+</li>
+<li>
+<p>如果mheap中也没有合适大小的mspan，则向操作系统申请</p>
+</li>
+</ul>
+<h2 id="总结">
+  总结
+  <a class="anchor" href="#%e6%80%bb%e7%bb%93">#</a>
+</h2>
+<p>Go语言的内存分配非常复杂，它的一个原则就是能复用的一定要复用。源码很难追，后面可能会再来一篇关于内存分配的源码阅读相关的文章。简单总结一下本文吧。</p>
+<p>文章从一个比较粗的角度来看Go的内存分配，并没有深入细节。一般而言，了解它的原理，到这个程度也可以了。</p>
+<ul>
+<li>Go在程序启动时，会向操作系统申请一大块内存，之后自行管理。</li>
+<li>Go内存管理的基本单元是mspan，它由若干个页组成，每种mspan可以分配特定大小的object。</li>
+<li>mcache, mcentral, mheap是Go内存管理的三大组件，层层递进。mcache管理线程在本地缓存的mspan；mcentral管理全局的mspan供所有线程使用；mheap管理Go的所有动态分配内存。</li>
+<li>极小对象会分配在一个object中，以节省资源，使用tiny分配器分配内存；一般小对象通过mspan分配内存；大对象则直接由mheap分配内存。</li>
+</ul>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#mspan">mspan</a></li>
+        <li><a href="#小对象分配">小对象分配</a></li>
+        <li><a href="#微对象分配">微对象分配</a></li>
+        <li><a href="#大对象分配">大对象分配</a></li>
+      </ul>
+    </li>
+    <li><a href="#总结">总结</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

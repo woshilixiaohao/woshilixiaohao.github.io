@@ -3,10 +3,42 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="缓存数据库 redis #  ">
+<meta name="description" content="键值对 #  redis用哈希表来保存所有键值对
+rehash也就是增加现有的哈希桶数量，让逐渐增多的entry元素能 在更多的桶之间分散保存，减少单个桶中的元素数量，从⽽减少单个桶中的冲突。
+ 给哈希表2分配更⼤的空间，例如是当前哈希表1⼤⼩的两倍； 把哈希表1中的数据重新映射并拷⻉到哈希表2中； 释放哈希表1的空间。  采用渐进式rehash
+在第⼆步拷⻉数据时，Redis仍然正常处理客⼾端请求，每处理⼀个请求时，从哈希表1中的第 ⼀个索引位置开始，顺带着将这个索引位置上的所有entries拷⻉到哈希表2中；等处理下⼀个请求时，再顺 带拷⻉哈希表1中的下⼀个索引位置的entries。
+集合类型的底层数据结构主要有5种：整数数组、双向链表、哈希表、压缩列表和 跳表。
+redis都在内存中操作，有哈希表，跳表数据结构，单线程用多路复⽤的⾼性能I/O模型，select/epoll
+Redis只运⾏单线程的情况下，该机制允许内核中，同时存在多个监听套接字（listen）和已连接套接字(accept)
+ AOF #  AOF⾥记录的是Redis收到的 每⼀条命令，这些命令是以⽂本形式保存的。
+AOF还有⼀个好处：它是在命令执⾏后才记录⽇志，所以不会阻塞当前的写操作
+AOF写回 #   Always，同步写回：每个写命令执⾏完，⽴⻢同步地将⽇志写回磁盘；(影响性能) Everysec，每秒写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，每隔⼀秒把缓冲 区中的内容写⼊磁盘； No，操作系统控制的写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，由操作系统 决定何时将缓冲区内容写回磁盘。  AOF重写 #  AOF⽂件是以追加的⽅式，逐⼀记录接收到的写命令的。当⼀个键值对被多条写命令反复修改 时，AOF⽂件会记录相应的多条命令。但是，在重写的时候，是根据这个键值对当前的最新状态，为它⽣成 对应的写⼊命令。这样⼀来，⼀个键值对在重写⽇志中只⽤⼀条命令就⾏了
+重写过程是由后台线程bgrewriteaof来完成的，这也是为了避免阻塞主线 程，导致数据库性能下降。
+⼀个拷⻉，两处⽇志
+fork会把主线程 的内存拷⻉⼀份给bgrewriteaof⼦进程
+第⼀处⽇志就是指正在使⽤的AOF⽇ 志，Redis会把这个操作写到它的缓冲区。第⼆处⽇志，就是指新的AOF重写⽇志
+ RDB #  Redis提供了两个命令来⽣成RDB⽂件，分别是save和bgsave。
+ save：在主线程中执⾏，会导致阻塞； bgsave：创建⼀个⼦进程，专⻔⽤于写⼊RDB⽂件，避免了主线程的阻塞，这也是Redis RDB⽂件⽣成的 默认配置。  Redis 4.0中提出了⼀个混合使⽤AOF⽇志和内存快照的⽅法。简单来说，内存快照以⼀定的频率执⾏，在两 次快照之间，使⽤AOF⽇志记录这期间的所有命令操作，T1和T2时刻的修改，⽤AOF⽇志记录，等到第⼆次做全量快照时，就可以清空AOF⽇志，因为 此时的修改都已经记录到快照中了，恢复时就不再⽤⽇志了。
+ 数据不能丢失时，内存快照和AOF的混合使⽤是⼀个很好的选择； 如果允许分钟级别的数据丢失，可以只使⽤RDB； 如果只⽤AOF，优先使⽤everysec的配置选项，因为它在可靠性和性能之间取了⼀个平衡   Linux中CopyOnWrite实现原理 fork()之后，kernel把父进程中所有的内存页的权限都设为read-only，然后子进程的地址空间指向父进程。当父子进程都只读内存时，相安无事。当其中某个进程写内存时，CPU硬件检测到内存页是read-only的，于是触发页异常中断（page-fault），陷入kernel的一个中断例程。中断例程中，kernel就会把触发的异常的页复制一份，于是父子进程各自持有独立的一份。">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
-<meta property="og:description" content="缓存数据库 redis #  " />
+<meta property="og:description" content="键值对 #  redis用哈希表来保存所有键值对
+rehash也就是增加现有的哈希桶数量，让逐渐增多的entry元素能 在更多的桶之间分散保存，减少单个桶中的元素数量，从⽽减少单个桶中的冲突。
+ 给哈希表2分配更⼤的空间，例如是当前哈希表1⼤⼩的两倍； 把哈希表1中的数据重新映射并拷⻉到哈希表2中； 释放哈希表1的空间。  采用渐进式rehash
+在第⼆步拷⻉数据时，Redis仍然正常处理客⼾端请求，每处理⼀个请求时，从哈希表1中的第 ⼀个索引位置开始，顺带着将这个索引位置上的所有entries拷⻉到哈希表2中；等处理下⼀个请求时，再顺 带拷⻉哈希表1中的下⼀个索引位置的entries。
+集合类型的底层数据结构主要有5种：整数数组、双向链表、哈希表、压缩列表和 跳表。
+redis都在内存中操作，有哈希表，跳表数据结构，单线程用多路复⽤的⾼性能I/O模型，select/epoll
+Redis只运⾏单线程的情况下，该机制允许内核中，同时存在多个监听套接字（listen）和已连接套接字(accept)
+ AOF #  AOF⾥记录的是Redis收到的 每⼀条命令，这些命令是以⽂本形式保存的。
+AOF还有⼀个好处：它是在命令执⾏后才记录⽇志，所以不会阻塞当前的写操作
+AOF写回 #   Always，同步写回：每个写命令执⾏完，⽴⻢同步地将⽇志写回磁盘；(影响性能) Everysec，每秒写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，每隔⼀秒把缓冲 区中的内容写⼊磁盘； No，操作系统控制的写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，由操作系统 决定何时将缓冲区内容写回磁盘。  AOF重写 #  AOF⽂件是以追加的⽅式，逐⼀记录接收到的写命令的。当⼀个键值对被多条写命令反复修改 时，AOF⽂件会记录相应的多条命令。但是，在重写的时候，是根据这个键值对当前的最新状态，为它⽣成 对应的写⼊命令。这样⼀来，⼀个键值对在重写⽇志中只⽤⼀条命令就⾏了
+重写过程是由后台线程bgrewriteaof来完成的，这也是为了避免阻塞主线 程，导致数据库性能下降。
+⼀个拷⻉，两处⽇志
+fork会把主线程 的内存拷⻉⼀份给bgrewriteaof⼦进程
+第⼀处⽇志就是指正在使⽤的AOF⽇ 志，Redis会把这个操作写到它的缓冲区。第⼆处⽇志，就是指新的AOF重写⽇志
+ RDB #  Redis提供了两个命令来⽣成RDB⽂件，分别是save和bgsave。
+ save：在主线程中执⾏，会导致阻塞； bgsave：创建⼀个⼦进程，专⻔⽤于写⼊RDB⽂件，避免了主线程的阻塞，这也是Redis RDB⽂件⽣成的 默认配置。  Redis 4.0中提出了⼀个混合使⽤AOF⽇志和内存快照的⽅法。简单来说，内存快照以⼀定的频率执⾏，在两 次快照之间，使⽤AOF⽇志记录这期间的所有命令操作，T1和T2时刻的修改，⽤AOF⽇志记录，等到第⼆次做全量快照时，就可以清空AOF⽇志，因为 此时的修改都已经记录到快照中了，恢复时就不再⽤⽇志了。
+ 数据不能丢失时，内存快照和AOF的混合使⽤是⼀个很好的选择； 如果允许分钟级别的数据丢失，可以只使⽤RDB； 如果只⽤AOF，优先使⽤everysec的配置选项，因为它在可靠性和性能之间取了⼀个平衡   Linux中CopyOnWrite实现原理 fork()之后，kernel把父进程中所有的内存页的权限都设为read-only，然后子进程的地址空间指向父进程。当父子进程都只读内存时，相安无事。当其中某个进程写内存时，CPU硬件检测到内存页是read-only的，于是触发页异常中断（page-fault），陷入kernel的一个中断例程。中断例程中，kernel就会把触发的异常的页复制一份，于是父子进程各自持有独立的一份。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/nosql/redis/" /><meta property="article:section" content="docs" />
 
@@ -17,7 +49,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.cfddf920089f1455590514833fea1e66bfd490aaad22c6f347ba2ad225edbb83.js" integrity="sha256-z935IAifFFVZBRSDP&#43;oeZr/UkKqtIsbzR7oq0iXtu4M=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.55521e020be85709ff7a38b6c916ae95096e8bcaa216ac4aaaff69e27781036c.js" integrity="sha256-VVIeAgvoVwn/eji2yRaulQlui8qiFqxKqv9p4neBA2w=" crossorigin="anonymous"></script>
 
   <script defer src="/sw.min.6f6f90fcb8eb1c49ec389838e6b801d0de19430b8e516902f8d75c3c8bd98739.js" integrity="sha256-b2&#43;Q/LjrHEnsOJg45rgB0N4ZQwuOUWkC&#43;NdcPIvZhzk=" crossorigin="anonymous"></script>
 <!--
@@ -71,11 +103,218 @@ https://github.com/alex-shpak/hugo-book
   
 
   
+    <a href="https://woshilixiaohao.github.io/docs/interview/" class="">Interview</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Redis面试题</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
     <a href="https://woshilixiaohao.github.io/docs/tech/" class="">Tech</a>
   
 
           
   <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/" class="">Db</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/mysql/" class="">Mysql</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/" class="">Go</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="">Atomic包源码解析</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" class="">Golang内存分配</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="">Go常用设计模式</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/" class="">Unsafe包</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/" class="">Java</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/" class="">Mq</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" class="">Kafka</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
     
       
         <li>
@@ -178,7 +417,52 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#缓存数据库-redis">缓存数据库 redis</a></li>
+    <li>
+      <ul>
+        <li></li>
+        <li><a href="#主从">主从</a></li>
+        <li><a href="#哨兵">哨兵</a></li>
+        <li><a href="#redis-cluster">Redis Cluster</a></li>
+        <li><a href="#string的坑">String的坑</a></li>
+        <li><a href="#统计">统计</a></li>
+        <li><a href="#redis的基本对象结构">Redis的基本对象结构</a></li>
+        <li><a href="#redis中保存时间序列数据">Redis中保存时间序列数据</a></li>
+        <li><a href="#redis消息队列">Redis消息队列</a></li>
+      </ul>
+    </li>
+    <li><a href="#如何避免单线程模型的阻塞">如何避免单线程模型的阻塞？</a>
+      <ul>
+        <li><a href="#阻塞点">阻塞点</a></li>
+        <li><a href="#哪些阻塞点可以异步执行">哪些阻塞点可以异步执行</a></li>
+        <li><a href="#异步的线程机制">异步的⼦线程机制</a></li>
+        <li><a href="#cpu对redis影响">CPU对redis影响</a></li>
+        <li><a href="#redis响应">Redis响应</a></li>
+        <li><a href="#checklist">checklist</a></li>
+        <li><a href="#内存碎片">内存碎片</a></li>
+        <li><a href="#内存空间效率">内存空间效率</a></li>
+        <li><a href="#总结">总结</a></li>
+        <li><a href="#缓存类型">缓存类型</a></li>
+        <li><a href="#缓存淘汰策略">缓存淘汰策略</a></li>
+        <li><a href="#缓存一致性">缓存一致性</a></li>
+        <li><a href="#缓存雪崩击穿穿透">缓存雪崩、击穿、穿透</a></li>
+        <li><a href="#缓存污染">缓存污染</a></li>
+        <li><a href="#redis的两种原操作法">Redis的两种原⼦操作⽅法</a></li>
+        <li><a href="#redis分布式锁">Redis分布式锁</a></li>
+        <li><a href="#redis的事务机制能保证哪些属性">Redis的事务机制能保证哪些属性？</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+    <li><a href="#主从故障">主从故障</a>
+      <ul>
+        <li><a href="#主从数据不一致">主从数据不一致</a></li>
+        <li><a href="#读取过期数据">读取过期数据</a></li>
+        <li><a href="#不合理配置项导致的服务挂掉">不合理配置项导致的服务挂掉</a></li>
+        <li><a href="#脑裂">脑裂</a></li>
+        <li><a href="#redis秒杀">Redis秒杀</a></li>
+        <li><a href="#数据倾斜">数据倾斜</a></li>
+        <li><a href="#rediscluster通信">RedisCluster通信</a></li>
+      </ul>
+    </li>
   </ul>
 </nav>
 
@@ -191,10 +475,943 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"><h2 id="缓存数据库-redis">
-  缓存数据库 redis
-  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e6%95%b0%e6%8d%ae%e5%ba%93-redis">#</a>
+  <article class="markdown"><h4 id="键值对">
+  键值对
+  <a class="anchor" href="#%e9%94%ae%e5%80%bc%e5%af%b9">#</a>
+</h4>
+<p>redis用哈希表来保存所有键值对</p>
+<p>rehash也就是增加现有的哈希桶数量，让逐渐增多的entry元素能 在更多的桶之间分散保存，减少单个桶中的元素数量，从⽽减少单个桶中的冲突。</p>
+<ol>
+<li>给哈希表2分配更⼤的空间，例如是当前哈希表1⼤⼩的两倍；</li>
+<li>把哈希表1中的数据重新映射并拷⻉到哈希表2中；</li>
+<li>释放哈希表1的空间。</li>
+</ol>
+<p>采用渐进式rehash</p>
+<p>在第⼆步拷⻉数据时，Redis仍然正常处理客⼾端请求，每处理⼀个请求时，从哈希表1中的第 ⼀个索引位置开始，顺带着将这个索引位置上的所有entries拷⻉到哈希表2中；等处理下⼀个请求时，再顺 带拷⻉哈希表1中的下⼀个索引位置的entries。</p>
+<p>集合类型的底层数据结构主要有5种：整数数组、双向链表、哈希表、压缩列表和 跳表。</p>
+<p>redis都在内存中操作，有哈希表，跳表数据结构，单线程用多路复⽤的⾼性能I/O模型，select/epoll</p>
+<p>Redis只运⾏单线程的情况下，该机制允许内核中，同时存在多个监听套接字（listen）和已连接套接字(accept)</p>
+<hr>
+<h4 id="aof">
+  AOF
+  <a class="anchor" href="#aof">#</a>
+</h4>
+<p>AOF⾥记录的是Redis收到的 每⼀条命令，这些命令是以⽂本形式保存的。</p>
+<p>AOF还有⼀个好处：它是在命令执⾏后才记录⽇志，所以不会阻塞当前的写操作</p>
+<h5 id="aof写回">
+  AOF写回
+  <a class="anchor" href="#aof%e5%86%99%e5%9b%9e">#</a>
+</h5>
+<ul>
+<li>Always，同步写回：每个写命令执⾏完，⽴⻢同步地将⽇志写回磁盘；(影响性能)</li>
+<li>Everysec，每秒写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，每隔⼀秒把缓冲 区中的内容写⼊磁盘；</li>
+<li>No，操作系统控制的写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，由操作系统 决定何时将缓冲区内容写回磁盘。</li>
+</ul>
+<h5 id="aof重写">
+  AOF重写
+  <a class="anchor" href="#aof%e9%87%8d%e5%86%99">#</a>
+</h5>
+<p>AOF⽂件是以追加的⽅式，逐⼀记录接收到的写命令的。当⼀个键值对被多条写命令反复修改 时，AOF⽂件会记录相应的多条命令。但是，在重写的时候，是根据这个键值对当前的最新状态，为它⽣成 对应的写⼊命令。这样⼀来，⼀个键值对在重写⽇志中只⽤⼀条命令就⾏了</p>
+<p>重写过程是由后台线程bgrewriteaof来完成的，这也是为了避免阻塞主线 程，导致数据库性能下降。</p>
+<p>⼀个拷⻉，两处⽇志</p>
+<p>fork会把主线程 的内存拷⻉⼀份给bgrewriteaof⼦进程</p>
+<p>第⼀处⽇志就是指正在使⽤的AOF⽇ 志，Redis会把这个操作写到它的缓冲区。第⼆处⽇志，就是指新的AOF重写⽇志</p>
+<hr>
+<h4 id="rdb">
+  RDB
+  <a class="anchor" href="#rdb">#</a>
+</h4>
+<p>Redis提供了两个命令来⽣成RDB⽂件，分别是save和bgsave。</p>
+<ul>
+<li>save：在主线程中执⾏，会导致阻塞；</li>
+<li>bgsave：创建⼀个⼦进程，专⻔⽤于写⼊RDB⽂件，避免了主线程的阻塞，这也是Redis RDB⽂件⽣成的 默认配置。</li>
+</ul>
+<p>Redis 4.0中提出了⼀个混合使⽤AOF⽇志和内存快照的⽅法。简单来说，内存快照以⼀定的频率执⾏，在两 次快照之间，使⽤AOF⽇志记录这期间的所有命令操作，T1和T2时刻的修改，⽤AOF⽇志记录，等到第⼆次做全量快照时，就可以清空AOF⽇志，因为 此时的修改都已经记录到快照中了，恢复时就不再⽤⽇志了。</p>
+<ul>
+<li>数据不能丢失时，内存快照和AOF的混合使⽤是⼀个很好的选择；</li>
+<li>如果允许分钟级别的数据丢失，可以只使⽤RDB；</li>
+<li>如果只⽤AOF，优先使⽤everysec的配置选项，因为它在可靠性和性能之间取了⼀个平衡</li>
+</ul>
+<blockquote>
+<p>Linux中CopyOnWrite实现原理
+fork()之后，kernel把父进程中所有的内存页的权限都设为read-only，然后子进程的地址空间指向父进程。当父子进程都只读内存时，相安无事。当其中某个进程写内存时，CPU硬件检测到内存页是read-only的，于是触发页异常中断（page-fault），陷入kernel的一个中断例程。中断例程中，kernel就会把触发的异常的页复制一份，于是父子进程各自持有独立的一份。</p>
+<p>CopyOnWrite的好处：
+1、减少分配和复制资源时带来的瞬时延迟；
+2、减少不必要的资源分配；
+CopyOnWrite的缺点：
+1、如果父子进程都需要进行大量的写操作，会产生大量的分页错误（页异常中断page-fault）;</p>
+<p>Redis中的CopyOnWrite
+Redis在持久化时，如果是采用BGSAVE命令或者BGREWRITEAOF的方式，那Redis会fork出一个子进程来读取数据，从而写到磁盘中。
+总体来看，Redis还是读操作比较多。如果子进程存在期间，发生了大量的写操作，那可能就会出现很多的分页错误(页异常中断page-fault)，这样就得耗费不少性能在复制上。
+而在rehash阶段上，写操作是无法避免的。所以Redis在fork出子进程之后，将负载因子阈值提高，尽量减少写操作，避免不必要的内存写入操作，最大限度地节约内存</p>
+</blockquote>
+<hr>
+<h3 id="主从">
+  主从
+  <a class="anchor" href="#%e4%b8%bb%e4%bb%8e">#</a>
+</h3>
+<p>主从库之间采⽤的是读写分离的⽅式。</p>
+<ul>
+<li>读操作：主库、从库都可以接收；</li>
+<li>写操作：⾸先到主库执⾏，然后，主库将写操作同步给从库。</li>
+</ul>
+<h4 id="主从库间第次同步">
+  主从库间第⼀次同步
+  <a class="anchor" href="#%e4%b8%bb%e4%bb%8e%e5%ba%93%e9%97%b4%e7%ac%ac%e6%ac%a1%e5%90%8c%e6%ad%a5">#</a>
+</h4>
+<ul>
+<li>第⼀阶段是主从库间建⽴连接、协商同步的过程，主要是为<strong>全量复制</strong>做准备。在这⼀步，从库和主库建⽴起 连接，并告诉主库即将进⾏同步，主库确认回复后，主从库间就可以开始同步了</li>
+<li>第二阶段是主库将所有数据同步给从库。从库收到数据后，在本地完成数据加载。这个过程依赖于内存快 照⽣成的RDB⽂件。</li>
+<li>第三阶段：主库会把第⼆阶段执⾏过程中新收到的写命令，再发送给从库。当主库完成RDB⽂件发送后，就会把此时replication buffer中的修改操作发给从库，从库再重新执⾏这些操 作</li>
+</ul>
+<h4 id="长连接传播">
+  长连接传播
+  <a class="anchor" href="#%e9%95%bf%e8%bf%9e%e6%8e%a5%e4%bc%a0%e6%92%ad">#</a>
+</h4>
+<p>完成全量复制，它们之间就会⼀直维护⼀个⽹络连接，主库会通过这个 连接将后续陆续收到的命令操作再同步给从库，这个过程也称为基于⻓连接的命令传播，可以避免频繁建⽴ 连接的开销。</p>
+<h4 id="主从库间络断了怎么办">
+  主从库间⽹络断了怎么办？
+  <a class="anchor" href="#%e4%b8%bb%e4%bb%8e%e5%ba%93%e9%97%b4%e7%bb%9c%e6%96%ad%e4%ba%86%e6%80%8e%e4%b9%88%e5%8a%9e">#</a>
+</h4>
+<p>主从库会采⽤<strong>增量复制</strong>的⽅式继续同步。这⾥的奥妙就在于repl_backlog_buffer这个缓 冲区。</p>
+<p>当主从库断连后，主库会把断连期间收到的写操作命令，写⼊replication buffer，同时也会把这些操作命令 replicaof 所选从库的IP 6379也写⼊repl_backlog_buffer这个缓冲区。 repl_backlog_buffer是⼀个环形缓冲区，主库会记录⾃⼰写到的位置，从库则会记录⾃⼰已经读到的位 置。</p>
+<p>从库连上后，会发送psycn命令，并把slave_repl_offset到master，主库master_repl_offset和slave_repl_offset之间的差距</p>
+<p>因为repl_backlog_buffer是⼀个环形缓冲区，所以在缓冲区写满后，主库会继续写⼊，此时，就会覆盖掉之前写⼊的操作。如果从库的读取速度⽐较慢，就有可能导致从库还未读 取的操作被主库新写的操作覆盖了，这会导致主从库间的数据不⼀致。我们可以调整repl_backlog_size这个参数，即repl_backlog_size = 缓冲空间⼤⼩ * 2</p>
+<blockquote>
+<p>Redis的主从库同步的基本原理，总结来说，有三种模式：全量复制、基于⻓连接 的命令传播，以及增量复制。</p>
+<p>全量复制虽然耗时，但是对于从库来说，如果是第⼀次同步，全量复制是⽆法避免的，所以，我给你⼀个⼩ 建议：⼀个Redis实例的数据库不要太⼤，⼀个实例⼤⼩在⼏GB级别⽐较合适，这样可以减少RDB⽂件⽣ 成、传输和重新加载的开销。另外，为了避免多个从库同时和主库进⾏全量复制，给主库过⼤的同步压⼒， 我们也可以采⽤“主-从-从”这⼀级联模式，来缓解主库的压⼒。</p>
+<p>⻓连接复制是主从库正常运⾏后的常规同步阶段。在这个阶段中，主从库之间通过命令传播实现同步。不 过，这期间如果遇到了⽹络断连，增量复制就派上⽤场了。我特别建议你留意⼀下repl_backlog_size这个 配置参数。如果它配置得过⼩，在增量复制阶段，可能会导致从库的复制进度赶不上主库，进⽽导致从库重 新进⾏全量复制。所以，通过调⼤这个参数，可以减少从库在⽹络断连时全量复制的⻛险。</p>
+</blockquote>
+<p>replication buffer和repl_backlog_buffer区别</p>
+<blockquote>
+<p>replication buffer是主从库在进⾏全量复制时，主库上⽤于和从库连接的客⼾端的buffer，⽽ repl_backlog_buffer是为了⽀持从库增量复制，主库上⽤于持续保存写操作的⼀块专⽤buffer。</p>
+<p>Redis主从库在进⾏复制时，当主库要把全量复制期间的写操作命令发给从库时，主库会先创建⼀个客⼾ 端，⽤来连接从库，然后通过这个客⼾端，把写操作命令发给从库。在内存中，主库上的客⼾端就会对应⼀ 个buffer，这个buffer就被称为replication buffer。Redis通过client_buffer配置项来控制这个buffer的⼤ ⼩。主库会给每个从库建⽴⼀个客⼾端，所以replication buffer不是共享的，⽽是每个从库都有⼀个对应的 客⼾端。</p>
+<p>repl_backlog_buffer是⼀块专⽤buffer，在Redis服务器启动后，开始⼀直接收写操作命令，这是所有从库 共享的。主库和从库会各⾃记录⾃⼰的复制进度，所以，不同的从库在进⾏恢复时，会把⾃⼰的复制进度 （slave_repl_offset）发给主库，主库就可以和它独⽴同步</p>
+</blockquote>
+<hr>
+<h3 id="哨兵">
+  哨兵
+  <a class="anchor" href="#%e5%93%a8%e5%85%b5">#</a>
+</h3>
+<p>哨兵主要负责的 就是三个任务：监控、选主（选择主库）和通知。</p>
+<ul>
+<li>监控：监控是指哨兵进程在运⾏时，周期性地给所有的主从库发送PING命令，检测它们是否仍然 在线运⾏。</li>
+<li>选主：主库挂了以后，哨兵就需要从很多个从库⾥，按照⼀定的规 则选择⼀个从库实例，把它作为新的主库。</li>
+<li>通知：在执⾏通知任务时，哨兵会把新主库的连接信息发给其他从库，让 它们执⾏replicaof命令，和新主库建⽴连接，并进⾏数据复制。同时，哨兵会把新主库的连接信息通知给客 ⼾端，让它们把请求操作发到新主库上。</li>
+</ul>
+<h4 id="主观下线和客观下线">
+  主观下线和客观下线
+  <a class="anchor" href="#%e4%b8%bb%e8%a7%82%e4%b8%8b%e7%ba%bf%e5%92%8c%e5%ae%a2%e8%a7%82%e4%b8%8b%e7%ba%bf">#</a>
+</h4>
+<p>哨兵进程会使⽤PING命令检测它⾃⼰和主、从库的⽹络连接情况，⽤来判断实例的状态。如果哨兵发现主 库或从库对PING命令的响应超时了，那么，哨兵就会先把它标记为“<strong>主观下线</strong>”。</p>
+<p>如果检测的是从库，那么，哨兵简单地把它标记为“<strong>主观下线</strong>”就⾏了。主库需要<strong>哨兵集群</strong>，再n/2+1的哨兵判断主观下线，标记<strong>客观下线</strong>，然后进入重新选主。</p>
+<h4 id="哨兵集群选主">
+  哨兵集群选主
+  <a class="anchor" href="#%e5%93%a8%e5%85%b5%e9%9b%86%e7%be%a4%e9%80%89%e4%b8%bb">#</a>
+</h4>
+<p>筛选：要检查从库的当前在线状态，还要判断它之前的⽹络连接状态。使⽤配置项down-after-milliseconds，在时间内超时10次，即筛选掉</p>
+<p>打分：</p>
+<p>​	只要在某⼀轮中，有从库得分最⾼，那么它就是主库了</p>
+<p>​	1、从库优 先级：过slave-priority配置项，给不同的从库设置不同优先级。优先级高的分高做主库</p>
+<p>​	2、从库复制进度：主库会⽤master_repl_offset记 录当前的最新写操作在repl_backlog_buffer中的位置，⽽从库会⽤slave_repl_offset这个值记录当前的复 制进度。如果在所有从库中，有 从库的slave_repl_offset最接近master_repl_offset，那么它的得分就最⾼做主库</p>
+<p>​	3、从库ID号：每个实例都会有⼀个ID，在优先级和复制进度都相同的情况下，ID号最⼩的从库得分最⾼，会被选为新主库。</p>
+<h4 id="基于pubsub机制的哨兵集群组成">
+  基于pub/sub机制的哨兵集群组成
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8epubsub%e6%9c%ba%e5%88%b6%e7%9a%84%e5%93%a8%e5%85%b5%e9%9b%86%e7%be%a4%e7%bb%84%e6%88%90">#</a>
+</h4>
+<p>主库：哨兵只要和主库建⽴起了连接，就可以在主库上发布消息了，⽐如说发布它⾃⼰的连接信息（IP和端⼝）。 同时，它也可以从主库上订阅消息，获得其他哨兵发布的连接信息。当多个哨兵实例都在主库上做了发布和 订阅操作后，它们之间就能知道彼此的IP地址和端⼝。</p>
+<p>在主从集群中，主库上有⼀个名为“<strong>sentinel</strong>:hello”的频道，不同哨兵就是通过它来相互发现， 实现互相通信的。</p>
+<p>从库：由哨兵向主库发送<strong>INFO</strong>命令来完成的。就像下图所⽰，哨兵2给主库发送INFO命令，主库接受到这个 命令后，就会把从库列表返回给哨兵。接着，哨兵就可以根据从库列表中的连接信息，和每个从库建⽴连 接，并在这个连接上持续地对从库进⾏监控。</p>
+<h4 id="基于pubsub机制的客端事件通知">
+  基于pub/sub机制的客⼾端事件通知
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8epubsub%e6%9c%ba%e5%88%b6%e7%9a%84%e5%ae%a2%e7%ab%af%e4%ba%8b%e4%bb%b6%e9%80%9a%e7%9f%a5">#</a>
+</h4>
+<p>客⼾端从哨兵这⾥订阅消息了。具体的操作步骤是，客⼾端读取哨兵的配 置⽂件后，可以获得哨兵的地址和端⼝，和哨兵建⽴⽹络连接。然后，我们可以在客⼾端执⾏订阅命令，来 获取不同的事件消息。</p>
+<h4 id="由哪个哨兵执主从切换">
+  由哪个哨兵执⾏主从切换？
+  <a class="anchor" href="#%e7%94%b1%e5%93%aa%e4%b8%aa%e5%93%a8%e5%85%b5%e6%89%a7%e4%b8%bb%e4%bb%8e%e5%88%87%e6%8d%a2">#</a>
+</h4>
+<p>“Leader选举”。因为最终执⾏主从切换的哨兵称为Leader，投票过程就是确定 Leader。</p>
+<p>第⼀，拿到半数以上的赞成票；</p>
+<p>第⼆， 拿到的票数同时还需要⼤于等于哨兵配置⽂件中的quorum值。</p>
+<p>以3个哨兵为例，假设此时的quorum设置为 2，那么，任何⼀个想成为Leader的哨兵只要拿到2张赞成票，就可以了。</p>
+<p>如果哨兵集群只有2个实例，此时，⼀个哨兵要想成为Leader，必须获得2票，⽽不是1票。</p>
+<hr>
+<h3 id="redis-cluster">
+  Redis Cluster
+  <a class="anchor" href="#redis-cluster">#</a>
+</h3>
+<p>在Redis Cluster⽅案中，⼀个切⽚集群共有16384个哈希槽，这些哈希槽类似于数据分 区，每个键值对都会根据它的key，被映射到⼀个哈希槽中。集群重定向MOVED ACK，MOVED会更新客⼾端缓存的哈希槽分配信息，ACK不会</p>
+<h3 id="string的坑">
+  String的坑
+  <a class="anchor" href="#string%e7%9a%84%e5%9d%91">#</a>
+</h3>
+<p>保存了1亿张图⽚的信息，⽤了约6.4GB的内存，⼀个图⽚ID和图⽚存储对象ID的记 录平均⽤了64字节。</p>
+<h4 id="sds">
+  SDS
+  <a class="anchor" href="#sds">#</a>
+</h4>
+<p>buf：字节数组，保存实际数据。为了表⽰字节数组的结束，Redis会⾃动在数组最后加⼀个“\0”，这 就会额外占⽤1个字节的开销。 len：占4个字节，表⽰buf的已⽤⻓度。 alloc：也占个4字节，表⽰buf的实际分配⻓度，⼀般⼤于len。</p>
+<p>String类型来说，除了SDS的额外开销，还有⼀个来⾃于RedisObject结构体的开销。</p>
+<h5 id="redisobject">
+  RedisObject
+  <a class="anchor" href="#redisobject">#</a>
+</h5>
+<ul>
+<li>
+<p>当保存的是Long类型整数时，RedisObject中的指针就直接赋值为整数数据了，这样就不⽤额外的 指针再指向整数了，节省了指针的空间开销。</p>
+</li>
+<li>
+<p>当保存的是字符串数据，并且字符串⼩于等于44字节时，RedisObject中的元数据、指针和SDS 是⼀块连续的内存区域，这样就可以避免内存碎⽚。这种布局⽅式也被称为embstr编码⽅式。</p>
+</li>
+<li>
+<p>当字符串⼤于44字节时，SDS的数据量就开始变多了，Redis就不再把SDS和RedisObject布局在⼀起 了，⽽是会给SDS分配独⽴的空间，并⽤指针指向SDS结构。这种布局⽅式被称为raw编码模式。</p>
+</li>
+</ul>
+<p>Redis会使⽤⼀个全局哈希表保存所有键值对，哈希表的每⼀项是dictEntry结构中有三个8字节的指针，分别指向key、value以及下⼀个 dictEntry，三个指针共24字节，到Redis使⽤的内存分配库jemalloc，所以会是32</p>
+<p>String保存64的原因就是 16 + 16 + 32 =64，redis元数据占了48字节</p>
+<h5 id="优化方案使用压缩列表">
+  优化方案使用压缩列表
+  <a class="anchor" href="#%e4%bc%98%e5%8c%96%e6%96%b9%e6%a1%88%e4%bd%bf%e7%94%a8%e5%8e%8b%e7%bc%a9%e5%88%97%e8%a1%a8">#</a>
+</h5>
+<p>prev_len，表⽰前⼀个entry的⻓度。prev_len有两种取值情况：1字节或5字节。取值1字节时，表⽰上 ⼀个entry的⻓度⼩于254字节。虽然1字节的值能表⽰的数值范围是0到255，但是压缩列表中zlend的取 值默认是255，因此，就默认⽤255表⽰整个压缩列表的结束，其他表⽰⻓度的地⽅就不能再⽤255这个值 了。所以，当上⼀个entry⻓度⼩于254字节时，prev_len取值为1字节，否则，就取值为5字节。</p>
+<p>len：表⽰⾃⾝⻓度，4字节；</p>
+<p>encoding：表⽰编码⽅式，1字节；</p>
+<p>content：保存实际数据。</p>
+<p>根据上场景，只需 1+4+1+8=16 保存一个数据</p>
+<hr>
+<h3 id="统计">
+  统计
+  <a class="anchor" href="#%e7%bb%9f%e8%ae%a1">#</a>
+</h3>
+<h4 id="聚合统计">
+  聚合统计
+  <a class="anchor" href="#%e8%81%9a%e5%90%88%e7%bb%9f%e8%ae%a1">#</a>
+</h4>
+<p>用set</p>
+<pre tabindex="0"><code>SUNIONSTORE user280680 user280680 user280680:20200803 // 并集
+SDIFFSTORE user:new user280680:20200804 user280680 // 差集
+SINTERSTORE user280680:rem user280680:20200803 user280680:20200804 //交集
+</code></pre><p>如果数据量特别大，你可以从主从集群中选择⼀个从库，让它专⻔负责聚合计算，或 者是把数据读取到客⼾端，在客⼾端来完成聚合统计</p>
+<h4 id="排序统计">
+  排序统计
+  <a class="anchor" href="#%e6%8e%92%e5%ba%8f%e7%bb%9f%e8%ae%a1">#</a>
+</h4>
+<p>List是按照元素进⼊List的顺序进⾏排序的，⽽Sorted Set可以根据元素的权重来排序，</p>
+<p>在⾯对需要展⽰最新列表、排⾏榜等场景时，如果数据更新频繁或者需要分⻚显⽰，建议你优先考虑 使⽤Sorted Set。</p>
+<h4 id="值状态统计">
+  ⼆值状态统计
+  <a class="anchor" href="#%e5%80%bc%e7%8a%b6%e6%80%81%e7%bb%9f%e8%ae%a1">#</a>
+</h4>
+<p>只有0/1，二值，使用bitmap</p>
+<h4 id="基数统计">
+  基数统计
+  <a class="anchor" href="#%e5%9f%ba%e6%95%b0%e7%bb%9f%e8%ae%a1">#</a>
+</h4>
+<p>一般会想到用Set或hash，但是数据量大就不行，考虑使用HyperLogLog</p>
+<p>HyperLogLog是⼀种⽤于统计基数的数据集合类型，它的最⼤优势就在于，当集合元素数量⾮常多时，它 计算基数所需的空间总是固定的，⽽且还很⼩。</p>
+<p>HyperLogLog的统计规则是基于概率完成的，所以它给出的统计结果是有 ⼀定误差的，标准误算率是0.81%。这也就意味着，你使⽤HyperLogLog统计的UV是100万，但实际的UV 可能是101万。虽然误差率不算⼤，但是，如果你需要精确统计结果的话，最好还是继续⽤Set或Hash类 型。</p>
+<h4 id="geo">
+  GEO
+  <a class="anchor" href="#geo">#</a>
+</h4>
+<p>可以用来操作经纬度</p>
+<hr>
+<h3 id="redis的基本对象结构">
+  Redis的基本对象结构
+  <a class="anchor" href="#redis%e7%9a%84%e5%9f%ba%e6%9c%ac%e5%af%b9%e8%b1%a1%e7%bb%93%e6%9e%84">#</a>
+</h3>
+<p>type：表⽰值的类型，涵盖了我们前⾯学习的五⼤基本类型；</p>
+<p>encoding：是值的编码⽅式，⽤来表⽰Redis中实现各个基本类型的底层数据结构，例如SDS、压缩列 表、哈希表、跳表等；</p>
+<p>lru：记录了这个对象最后⼀次被访问的时间，⽤于淘汰过期的键值对；</p>
+<p>refcount：记录了对象的引⽤计数；</p>
+<p>*ptr：是指向数据的指针。</p>
+<hr>
+<h3 id="redis中保存时间序列数据">
+  Redis中保存时间序列数据
+  <a class="anchor" href="#redis%e4%b8%ad%e4%bf%9d%e5%ad%98%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97%e6%95%b0%e6%8d%ae">#</a>
+</h3>
+<p>点查询，根据⼀个时间戳，查询相应时间的数据；</p>
+<p>范围查询，查询起始和截⽌时间戳范围内的数据；</p>
+<p>聚合计算，针对起始和截⽌时间戳范围内的所有数据进⾏计算，例如求最⼤/最⼩值，求均值等</p>
+<h4 id="基于hash和sorted-set保存时间序列数据">
+  基于Hash和Sorted Set保存时间序列数据
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8ehash%e5%92%8csorted-set%e4%bf%9d%e5%ad%98%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97%e6%95%b0%e6%8d%ae">#</a>
+</h4>
+<p>hash查某个时间没有问题，但是查范围不支持，同时再存Sorted Set解决。</p>
+<p>保证hash和sorted set原子，需要简单的事务的<strong>MULTI</strong>和<strong>EXEC</strong>命令</p>
+<p>聚合统计 ⼤量数据在Redis实例和客⼾端间频繁传输，这会和其他操作命令竞争⽹络资源，导致其他操作变慢。</p>
+<p>优缺点：⼀个是，在执⾏聚合计算时，我们需要把数据读取到客⼾端再进⾏聚合， 当有⼤量数据要聚合时，数据传输开销⼤；另⼀个是，所有的数据会在两个数据类型中各保存⼀份，内存开 销不⼩。不过，我们可以通过设置适当的数据过期时间，释放内存，减⼩内存压⼒。</p>
+<h4 id="基于redistimeseries模块保存时间序列数据">
+  基于RedisTimeSeries模块保存时间序列数据
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8eredistimeseries%e6%a8%a1%e5%9d%97%e4%bf%9d%e5%ad%98%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97%e6%95%b0%e6%8d%ae">#</a>
+</h4>
+<p>RedisTimeSeries是Redis的⼀个扩展模块。它专⻔⾯向时间序列数据提供了数据类型和访问接⼝，并且⽀ 持在Redis实例上直接对数据进⾏按时间范围的聚合计算。</p>
+<p>如果你的部署环境中⽹络带宽⾼、Redis实例内存⼤，可以优先考虑第⼀种⽅案；</p>
+<p>如果你的部署环境中⽹络、内存资源有限，⽽且数据量⼤，聚合计算频繁，需要按数据集合属性查询，可 以优先考虑第⼆种⽅案。</p>
+<hr>
+<h3 id="redis消息队列">
+  Redis消息队列
+  <a class="anchor" href="#redis%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97">#</a>
+</h3>
+<p>消息队列在存取消息时，必须要满⾜三个需求，分别是消息保序、处理重复的消息和保证消息可靠 性。</p>
+<h4 id="基于list的消息队列解决案">
+  基于List的消息队列解决⽅案
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8elist%e7%9a%84%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e8%a7%a3%e5%86%b3%e6%a1%88">#</a>
+</h4>
+<p>⽣产者可以使⽤LPUSH命令把要发送的消息依次写⼊List，⽽消费者则可以使⽤RPOP命令，从 List的另⼀端按照消息的写⼊顺序，依次读取消息并进⾏处理。</p>
+<p>BRPOP命令也称为阻塞式读取，客⼾端在没有读到队列数 据时，⾃动阻塞，直到有新的数据写⼊队列，再开始读取新数据。</p>
+<p>BRPOPLPUSH命令保证消息可靠，这个命令的作⽤是让消费者程序从⼀个List中读取消 息，同时，Redis会把这个消息再插⼊到另⼀个List（可以叫作备份List）留存。</p>
+<p>List类型并 不⽀持消费组的实现。</p>
+<h4 id="基于streams的消息队列解决案">
+  基于Streams的消息队列解决⽅案
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8estreams%e7%9a%84%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e8%a7%a3%e5%86%b3%e6%a1%88">#</a>
+</h4>
+<ul>
+<li>XADD：插⼊消息，保证有序，可以⾃动⽣成全局唯⼀ID；</li>
+<li>XREAD：⽤于读取消息，可以按ID读取数据；</li>
+<li>XREADGROUP：按消费组形式读取消息；</li>
+<li>XPENDING和XACK：XPENDING命令可以⽤来查询每个消费组内所有消费者已读取但尚未确认的消息， ⽽XACK命令⽤于向消息队列确认消息处理已完成。</li>
+</ul>
+<hr>
+<h2 id="如何避免单线程模型的阻塞">
+  如何避免单线程模型的阻塞？
+  <a class="anchor" href="#%e5%a6%82%e4%bd%95%e9%81%bf%e5%85%8d%e5%8d%95%e7%ba%bf%e7%a8%8b%e6%a8%a1%e5%9e%8b%e7%9a%84%e9%98%bb%e5%a1%9e">#</a>
 </h2>
+<ul>
+<li>Redis内部的阻塞式操作；</li>
+<li>CPU核和NUMA架构的影响；</li>
+<li>Redis关键系统配置；</li>
+<li>Redis内存碎⽚；</li>
+<li>Redis缓冲区。</li>
+</ul>
+<h3 id="阻塞点">
+  阻塞点
+  <a class="anchor" href="#%e9%98%bb%e5%a1%9e%e7%82%b9">#</a>
+</h3>
+<p>客⼾端：⽹络IO，键值对增删改查操作，数据库操作；</p>
+<p>磁盘：⽣成RDB快照，记录AOF⽇志，AOF⽇志重写；</p>
+<p>主从节点：主库⽣成、传输RDB⽂件，从库接收RDB⽂件、清空数据库、加载RDB⽂件；</p>
+<p>切⽚集群实例：向其他实例传输哈希槽信息，数据迁移。</p>
+<ul>
+<li><strong>集合全量查询和聚合操作；</strong></li>
+<li><strong>bigkey删除；</strong></li>
+<li><strong>清空数据库；</strong></li>
+<li><strong>AOF⽇志同步写；</strong></li>
+<li><strong>从库加载RDB⽂件。</strong></li>
+</ul>
+<h4 id="和客端交互时的阻塞点">
+  和客⼾端交互时的阻塞点
+  <a class="anchor" href="#%e5%92%8c%e5%ae%a2%e7%ab%af%e4%ba%a4%e4%ba%92%e6%97%b6%e7%9a%84%e9%98%bb%e5%a1%9e%e7%82%b9">#</a>
+</h4>
+<p>第⼀ 个阻塞点：集合全量查询和聚合操作。集合元素全量查询操作 HGETALL、SMEMBERS，以及集合的聚合统计操作，例如求交、并和差集。</p>
+<p>第⼆个阻塞点：bigkey删除操作</p>
+<p>第三个阻塞点：清空数据库。</p>
+<h4 id="和磁盘交互时的阻塞点">
+  和磁盘交互时的阻塞点
+  <a class="anchor" href="#%e5%92%8c%e7%a3%81%e7%9b%98%e4%ba%a4%e4%ba%92%e6%97%b6%e7%9a%84%e9%98%bb%e5%a1%9e%e7%82%b9">#</a>
+</h4>
+<p>采⽤⼦进程的⽅式⽣成 RDB快照⽂件，以及执⾏AOF⽇志重写操作。这样⼀来，这两个操作由⼦进程负责执⾏，慢速的磁盘IO就不 会阻塞主线程了。</p>
+<p>Redis直接记录AOF⽇志时，会根据不同的写回策略对数据做落盘保存。</p>
+<p>第四个阻塞点了：AOF⽇志同步写。</p>
+<h4 id="主从节点交互时的阻塞点">
+  主从节点交互时的阻塞点
+  <a class="anchor" href="#%e4%b8%bb%e4%bb%8e%e8%8a%82%e7%82%b9%e4%ba%a4%e4%ba%92%e6%97%b6%e7%9a%84%e9%98%bb%e5%a1%9e%e7%82%b9">#</a>
+</h4>
+<p>从库在清空当前数据库后，还需要把RDB⽂件加载到内存，这个过程的快慢和RDB⽂件的⼤⼩密切相 关，RDB⽂件越⼤，加载过程越慢，</p>
+<p>所以，加载RDB⽂件就成为了Redis的第五个阻塞点。</p>
+<h4 id="切集群实例交互时的阻塞点">
+  切⽚集群实例交互时的阻塞点
+  <a class="anchor" href="#%e5%88%87%e9%9b%86%e7%be%a4%e5%ae%9e%e4%be%8b%e4%ba%a4%e4%ba%92%e6%97%b6%e7%9a%84%e9%98%bb%e5%a1%9e%e7%82%b9">#</a>
+</h4>
+<p>迁移的是bigkey的话，就会造成主线程的阻塞，因为 Redis Cluster使⽤了同步迁移。</p>
+<h3 id="哪些阻塞点可以异步执行">
+  哪些阻塞点可以异步执行
+  <a class="anchor" href="#%e5%93%aa%e4%ba%9b%e9%98%bb%e5%a1%9e%e7%82%b9%e5%8f%af%e4%bb%a5%e5%bc%82%e6%ad%a5%e6%89%a7%e8%a1%8c">#</a>
+</h3>
+<p>读操作是典型的关键路径操作，所以<strong>集合全量查询和聚合操作</strong>和<strong>从库加载RDB文件</strong>不能异步，剩余的可以。</p>
+<h3 id="异步的线程机制">
+  异步的⼦线程机制
+  <a class="anchor" href="#%e5%bc%82%e6%ad%a5%e7%9a%84%e7%ba%bf%e7%a8%8b%e6%9c%ba%e5%88%b6">#</a>
+</h3>
+<p>Redis主线程启动后，会使⽤操作系统提供的pthread_create函数创建3个⼦线程，分别由它们负责AOF⽇志 写操作、键值对删除以及⽂件关闭的异步执⾏。</p>
+<h4 id="阻塞点的解决方案">
+  阻塞点的解决方案
+  <a class="anchor" href="#%e9%98%bb%e5%a1%9e%e7%82%b9%e7%9a%84%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88">#</a>
+</h4>
+<ul>
+<li>主线程通过⼀个链表形式的任务队列和⼦线程进⾏交互。当收到键值对删除和清空数据库的操作时，主线程 会把这个操作封装成⼀个任务，放⼊到任务队列中，然后给客⼾端返回⼀个完成信息，表明删除已经完成。等到后台⼦线程从任务队列中读取任务后，才开始实际删除键值对， 并释放相应的内存空间。因此，我们把这种异步删除也称为惰性删除（lazy free）</li>
+<li>当AOF⽇志配置成everysec选项后，主线程会把AOF写⽇志操作封装成⼀个任务，也放到 任务队列中。</li>
+<li>键值对删除：当你的集合类型中有⼤量元素（例如有百万级别或千万级别元素）需要删除时，我建议你使 ⽤UNLINK命令。</li>
+<li>清空数据库：可以在FLUSHDB和FLUSHALL命令后加上ASYNC选项，这样就可以让后台⼦线程异步地清 空数据库</li>
+<li>集合全量查询和聚合操作：可以使⽤SCAN命令，分批读取数据，再在客⼾端进⾏聚合计算；</li>
+<li>从库加载RDB⽂件：把主库的数据量⼤⼩控制在2~4GB左右，以保证RDB⽂件能以较快的速度加载。</li>
+</ul>
+<hr>
+<h3 id="cpu对redis影响">
+  CPU对redis影响
+  <a class="anchor" href="#cpu%e5%af%b9redis%e5%bd%b1%e5%93%8d">#</a>
+</h3>
+<p>在CPU多核的场景下，⽤taskset命令把Redis实例和⼀个核绑定，可 以减少Redis实例在不同核上被来回调度执⾏的开销，避免较⾼的尾延迟；在多CPU的NUMA架构下，如果 你对⽹络中断程序做了绑核操作，建议你同时把Redis实例和⽹络中断程序绑在同⼀个CPU Socket的不同核 上，这样可以避免Redis跨Socket访问内存中的⽹络数据的时间开销。</p>
+<h4 id="绑核的险和解决案">
+  绑核的⻛险和解决⽅案
+  <a class="anchor" href="#%e7%bb%91%e6%a0%b8%e7%9a%84%e9%99%a9%e5%92%8c%e8%a7%a3%e5%86%b3%e6%a1%88">#</a>
+</h4>
+<h5 id="案个redis实例对应绑个物理核">
+  ⽅案⼀：⼀个Redis实例对应绑⼀个物理核
+  <a class="anchor" href="#%e6%a1%88%e4%b8%aaredis%e5%ae%9e%e4%be%8b%e5%af%b9%e5%ba%94%e7%bb%91%e4%b8%aa%e7%89%a9%e7%90%86%e6%a0%b8">#</a>
+</h5>
+<p>给Redis实例绑核时，我们不要把⼀个实例和⼀个逻辑核绑定，⽽要和⼀个物理核绑定，也就是说，把⼀ 个物理核的2个逻辑核都⽤上。</p>
+<h5 id="方案二改源码">
+  方案二：改源码
+  <a class="anchor" href="#%e6%96%b9%e6%a1%88%e4%ba%8c%e6%94%b9%e6%ba%90%e7%a0%81">#</a>
+</h5>
+<hr>
+<h3 id="redis响应">
+  Redis响应
+  <a class="anchor" href="#redis%e5%93%8d%e5%ba%94">#</a>
+</h3>
+<p>方法：</p>
+<ul>
+<li>查看Redis的响应延迟</li>
+<li>当前环境下的Redis基线性能 redis-cli命令提供了‒intrinsic-latency选</li>
+</ul>
+<h4 id="redis操作特性的影响">
+  Redis⾃⾝操作特性的影响
+  <a class="anchor" href="#redis%e6%93%8d%e4%bd%9c%e7%89%b9%e6%80%a7%e7%9a%84%e5%bd%b1%e5%93%8d">#</a>
+</h4>
+<h5 id="慢查询">
+  慢查询：
+  <a class="anchor" href="#%e6%85%a2%e6%9f%a5%e8%af%a2">#</a>
+</h5>
+<ol>
+<li>⽤其他⾼效命令代替。⽐如说，如果你需要返回⼀个SET中的所有成员时，不要使⽤SMEMBERS命令， ⽽是要使⽤SSCAN多次迭代返回，避免⼀次返回⼤量数据，造成线程阻塞。</li>
+<li>当你需要执⾏排序、交集、并集操作时，可以在客⼾端完成，⽽不要⽤SORT、SUNION、SINTER这些 命令，以免拖慢Redis实例</li>
+<li>因为KEYS命令需要遍历存储的键值对，所以操作延时⾼。不建议生产环境使用</li>
+</ol>
+<h5 id="过期key">
+  过期key：
+  <a class="anchor" href="#%e8%bf%87%e6%9c%9fkey">#</a>
+</h5>
+<p>Redis每100毫秒会删除⼀些过期key，具体的算法如 下：</p>
+<ol>
+<li>采样ACTIVE_EXPIRE_CYCLE_LOOKUPS_PER_LOOP个数的key，并将其中过期的key全部删除；</li>
+<li>如果超过25%的key过期了，则重复删除的过程，直到过期key的⽐例降⾄25%以下。</li>
+</ol>
+<p>第一种问题不大，第二种原因时频繁使⽤带有相同时间参数的EXPIREAT 命令设置过期key。删除操作时阻塞的（Redis 4.0后可以⽤异步线程机制来减少阻塞影响）</p>
+<p>判 断Redis变慢的⽅法，⼀个是看响应延迟，⼀个是看基线性能。</p>
+<p>两种排查和解决Redis变慢 这个问题的⽅法：</p>
+<ul>
+<li>从慢查询命令开始排查，并且根据业务需求替换慢查询命令；</li>
+<li>排查过期key的时间设置，并根据实际使⽤需求，设置不同的过期时间。</li>
+</ul>
+<h5 id="件系统aof模式">
+  ⽂件系统：AOF模式
+  <a class="anchor" href="#%e4%bb%b6%e7%b3%bb%e7%bb%9faof%e6%a8%a1%e5%bc%8f">#</a>
+</h5>
+<p>当主线程使⽤后台⼦线程执⾏了⼀次fsync，需要再次把新接收的操作记录写回磁盘时，如果主线程发现上 ⼀次的fsync还没有执⾏完，那么它就会阻塞。所以，如果后台⼦线程执⾏的fsync频繁阻塞的话（⽐如AOF 重写占⽤了⼤量的磁盘IO带宽），主线程也会阻塞，导致Redis性能变慢。</p>
+<p>解决方案：使用固态硬盘</p>
+<h5 id="操作系统swap">
+  操作系统：swap
+  <a class="anchor" href="#%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9fswap">#</a>
+</h5>
+<p>触发swap的原因主要是<strong>物理机器内存不⾜</strong></p>
+<ul>
+<li>Redis实例⾃⾝使⽤了⼤量的内存，导致物理机器的可⽤内存不⾜；</li>
+<li>和Redis实例在同⼀台机器上运⾏的其他进程，在进⾏⼤量的⽂件读写操作。⽂件读写本⾝会占⽤系统内 存，这会导致分配给Redis实例的内存量变少，进⽽触发Redis发⽣swap。</li>
+</ul>
+<p>解决方案：增加机器的内存或者使⽤Redis集群</p>
+<h5 id="操作系统内存">
+  操作系统：内存⼤⻚
+  <a class="anchor" href="#%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f%e5%86%85%e5%ad%98">#</a>
+</h5>
+<p>解决方案：关闭内存大页</p>
+<h3 id="checklist">
+  checklist
+  <a class="anchor" href="#checklist">#</a>
+</h3>
+<ol>
+<li>获取Redis实例在当前环境下的基线性能。</li>
+<li>是否⽤了慢查询命令？如果是的话，就使⽤其他命令替代慢查询命令，或者把聚合计算命令放在客⼾端
+做。</li>
+<li>是否对过期key设置了相同的过期时间？对于批量删除的key，可以在每个key的过期时间上加⼀个随机
+数，避免同时删除。</li>
+<li>是否存在bigkey？ 对于bigkey的删除操作，如果你的Redis是4.0及以上的版本，可以直接利⽤异步线程
+机制减少主线程阻塞；如果是Redis 4.0以前的版本，可以使⽤SCAN命令迭代删除；对于bigkey的集合查
+询和聚合操作，可以使⽤SCAN命令在客⼾端完成。</li>
+<li>Redis AOF配置级别是什么？业务层⾯是否的确需要这⼀可靠性级别？如果我们需要⾼性能，同时也允许
+数据丢失，可以将配置项no-appendfsync-on-rewrite设置为yes，避免AOF重写和fsync竞争磁盘IO资
+源，导致Redis延迟增加。当然， 如果既需要⾼性能⼜需要⾼可靠性，最好使⽤⾼速固态盘作为AOF⽇志
+的写⼊盘。</li>
+<li>Redis实例的内存使⽤是否过⼤？发⽣swap了吗？如果是的话，就增加机器内存，或者是使⽤Redis集
+群，分摊单机Redis的键值对数量和内存压⼒。同时，要避免出现Redis和其他内存需求⼤的应⽤共享机
+器的情况。</li>
+<li>在Redis实例的运⾏环境中，是否启⽤了透明⼤⻚机制？如果是的话，直接关闭内存⼤⻚机制就⾏了。</li>
+<li>是否运⾏了Redis主从集群？如果是的话，把主库实例的数据量⼤⼩控制在2~4GB，以免主从复制时，从
+库因加载⼤的RDB⽂件⽽阻塞。</li>
+<li>是否使⽤了多核CPU或NUMA架构的机器运⾏Redis实例？使⽤多核CPU时，可以给Redis实例绑定物理
+核；使⽤NUMA架构时，注意把Redis实例和⽹络中断处理程序运⾏在同⼀个CPU Socket上。</li>
+</ol>
+<hr>
+<h3 id="内存碎片">
+  内存碎片
+  <a class="anchor" href="#%e5%86%85%e5%ad%98%e7%a2%8e%e7%89%87">#</a>
+</h3>
+<h4 id="如何判断是否有内存碎">
+  如何判断是否有内存碎⽚
+  <a class="anchor" href="#%e5%a6%82%e4%bd%95%e5%88%a4%e6%96%ad%e6%98%af%e5%90%a6%e6%9c%89%e5%86%85%e5%ad%98%e7%a2%8e">#</a>
+</h4>
+<p>Redis⾃⾝提供了INFO命令，可以⽤来查询内存使⽤的详细信息</p>
+<pre tabindex="0"><code>INFO memory
+# Memory
+used_memory:1073741736
+used_memory_human:1024.00M
+used_memory_rss:1997159792
+....
+mem_fragmentation_ratio:1.86
+</code></pre><p>mem_fragmentation_ratio的指标，它表⽰的就是Redis当前的内存碎⽚率。used_memory_rss和used_memory相除的结果</p>
+<ul>
+<li>mem_fragmentation_ratio ⼤于1但⼩于1.5。这种情况是合理的。这是因为，刚才我介绍的那些因素 是难以避免的。毕竟，内因的内存分配器是⼀定要使⽤的，分配策略都是通⽤的，不会轻易修改；⽽外因 由Redis负载决定，也⽆法限制。所以，存在内存碎⽚也是正常的。</li>
+<li>mem_fragmentation_ratio ⼤于 1.5 。这表明内存碎⽚率已经超过了50%。⼀般情况下，这个时候， 我们就需要采取⼀些措施来降低内存碎⽚率了。</li>
+</ul>
+<h4 id="如何清理内存碎">
+  如何清理内存碎⽚？
+  <a class="anchor" href="#%e5%a6%82%e4%bd%95%e6%b8%85%e7%90%86%e5%86%85%e5%ad%98%e7%a2%8e">#</a>
+</h4>
+<ul>
+<li>重启Redis实例</li>
+<li>从4.0-RC3版本以后，Redis⾃⾝提供了⼀种内存碎⽚⾃动清理。碎⽚清理是有代价的，操作系统需要把多份数据拷⻉到新位置，把原有空间释放出 来，这会带来时间开销。</li>
+</ul>
+<p>清理参数</p>
+<p>只要一项不满足就结束</p>
+<ul>
+<li>active-defrag-threshold-lower 10：表⽰内存碎⽚空间占操作系统分配给Redis的总空间⽐例达到10% 时，开始清理。</li>
+<li>active-defrag-ignore-bytes 100mb：表⽰内存碎⽚的字节数达到100MB时，开始清理；</li>
+</ul>
+<p>⾃动内存碎⽚清理功能在执⾏时，还会监控清理操 作占⽤的CPU时间</p>
+<ul>
+<li>active-defrag-cycle-min 25： 表⽰⾃动清理过程所⽤CPU时间的⽐例不低于25%，保证清理能正常开 展；</li>
+<li>active-defrag-cycle-max 75：表⽰⾃动清理过程所⽤CPU时间的⽐例不⾼于75%，⼀旦超过，就停⽌ 清理，从⽽避免在清理时，⼤量的内存拷⻉阻塞Redis，导致响应延迟升⾼。</li>
+</ul>
+<h3 id="内存空间效率">
+  内存空间效率
+  <a class="anchor" href="#%e5%86%85%e5%ad%98%e7%a9%ba%e9%97%b4%e6%95%88%e7%8e%87">#</a>
+</h3>
+<ul>
+<li>info memory命令是⼀个好⼯具，可以帮助你查看碎⽚率的情况；</li>
+<li>碎⽚率阈值是⼀个好经验，可以帮忙你有效地判断是否要进⾏碎⽚清理了；</li>
+<li>内存碎⽚⾃动清理是⼀个好⽅法，可以避免因为碎⽚导致Redis的内存实际利⽤率降低，提升成本收益 率。</li>
+</ul>
+<hr>
+<h4 id="如何应对输缓冲区溢出">
+  如何应对输⼊缓冲区溢出
+  <a class="anchor" href="#%e5%a6%82%e4%bd%95%e5%ba%94%e5%af%b9%e8%be%93%e7%bc%93%e5%86%b2%e5%8c%ba%e6%ba%a2%e5%87%ba">#</a>
+</h4>
+<p>⼀是把缓冲区调⼤， ⼆是从数据命令的发送和处理速度⼊⼿。</p>
+<p>Redis的客⼾端输⼊缓冲区⼤⼩的上限阈值，在代码中就设定为了1GB，无法调大缓冲区。</p>
+<p>避免客⼾端写⼊bigkey，</p>
+<h4 id="输出缓冲区溢出">
+  输出缓冲区溢出
+  <a class="anchor" href="#%e8%be%93%e5%87%ba%e7%bc%93%e5%86%b2%e5%8c%ba%e6%ba%a2%e5%87%ba">#</a>
+</h4>
+<p>避免bigkey操作返回⼤量数据结果；</p>
+<p>避免在线上环境中持续使⽤MONITOR命令。</p>
+<p>使⽤client-output-buffer-limit设置合理的缓冲区⼤⼩上限，或是缓冲区连续写⼊时间和写⼊量上限。</p>
+<h4 id="全量复制缓冲区">
+  全量复制缓冲区
+  <a class="anchor" href="#%e5%85%a8%e9%87%8f%e5%a4%8d%e5%88%b6%e7%bc%93%e5%86%b2%e5%8c%ba">#</a>
+</h4>
+<p>如果在全量复制时，从节点接收和加载RDB较慢，同时主节点接收到了⼤量的写命令，写命令在复制 缓冲区中就会越积越多，最终导致溢出。</p>
+<p>使⽤client-output-buffer-limit配置项，来设置合理的复制缓冲区⼤⼩。</p>
+<h4 id="增量复制缓冲区">
+  增量复制缓冲区
+  <a class="anchor" href="#%e5%a2%9e%e9%87%8f%e5%a4%8d%e5%88%b6%e7%bc%93%e5%86%b2%e5%8c%ba">#</a>
+</h4>
+<p>repl_backlog_size⼤⼩</p>
+<h3 id="总结">
+  总结
+  <a class="anchor" href="#%e6%80%bb%e7%bb%93">#</a>
+</h3>
+<ul>
+<li>
+<p>缓冲区溢出导致<strong>⽹络连接关闭</strong>：普通客⼾端、订阅客⼾端，以及从节点客⼾端，它们使⽤的缓冲区，本质 上都是Redis客⼾端和服务器端之间，或是主从节点之间为了传输命令数据⽽维护的。这些缓冲区⼀旦发 ⽣溢出，处理机制都是直接把客⼾端和服务器端的连接，或是主从节点间的连接关闭。⽹络连接关闭造成 的直接影响，就是业务程序⽆法读写Redis，或者是主从节点全量同步失败，需要重新执⾏。</p>
+</li>
+<li>
+<p>缓冲区溢出导致<strong>命令数据丢失</strong>：主节点上的复制积压缓冲区属于环形缓冲区，⼀旦发⽣溢出，新写⼊的命 令数据就会覆盖旧的命令数据，导致旧命令数据的丢失，进⽽导致主从节点重新进⾏全量复制。</p>
+</li>
+<li>
+<p>针对<strong>命令数据发送过快过⼤</strong>的问题，对于普通客⼾端来说可以避免bigkey，⽽对于复制缓冲区来说，就是 避免过⼤的RDB⽂件。</p>
+</li>
+<li>
+<p>针对<strong>命令数据处理较慢</strong>的问题，解决⽅案就是减少Redis主线程上的阻塞操作，例如使⽤异步的删除操 作。</p>
+</li>
+<li>
+<p>针对<strong>缓冲区空间过⼩</strong>的问题，解决⽅案就是使⽤client-output-buffer-limit配置项设置合理的输出缓冲 区、复制缓冲区和复制积压缓冲区⼤⼩。当然，我们不要忘了，输⼊缓冲区的⼤⼩默认是固定的，我们⽆ 法通过配置来修改它，除⾮直接去修改Redis源码。</p>
+</li>
+</ul>
+<hr>
+<h3 id="缓存类型">
+  缓存类型
+  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e7%b1%bb%e5%9e%8b">#</a>
+</h3>
+<h4 id="只读缓冲">
+  只读缓冲
+  <a class="anchor" href="#%e5%8f%aa%e8%af%bb%e7%bc%93%e5%86%b2">#</a>
+</h4>
+<p>要修改数据A，此时，数据A在Redis中也缓存了，那么，应⽤会先直接在数 据库⾥修改A，并把Redis中的A删除。等到应⽤需要读取数据A时，会发⽣缓存缺失，此时，应⽤从数据库 中读取A，并写⼊Redis，以便后续请求从缓存中直接读取</p>
+<h4 id="读写缓存">
+  读写缓存
+  <a class="anchor" href="#%e8%af%bb%e5%86%99%e7%bc%93%e5%ad%98">#</a>
+</h4>
+<p>同步直写是指，写请求发给缓存的同时，也会发给后端数据库进⾏处理，等到缓存和数据库都写完数据，才 给客⼾端返回。(数据可靠)</p>
+<p>异步写回策略，则是优先考虑了响应延迟。此时，所有写请求都先在缓存中处理。等到这些增改的数据要 被从缓存中淘汰出来时，缓存将它们写回后端数据库。（断电时，未从缓存写回，数据不可靠）</p>
+<h4 id="缓存建议容量">
+  缓存建议容量
+  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e5%bb%ba%e8%ae%ae%e5%ae%b9%e9%87%8f">#</a>
+</h4>
+<p>建议把缓存容量 设置为总数据量的15%到30%，兼顾访问性能和内存空间开销。</p>
+<h3 id="缓存淘汰策略">
+  缓存淘汰策略
+  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e6%b7%98%e6%b1%b0%e7%ad%96%e7%95%a5">#</a>
+</h3>
+<ul>
+<li>在设置了过期时间的数据中进⾏淘汰，包括volatile-random、volatile-ttl、volatile-lru、volatilelfu（Redis 4.0后新增）四种。</li>
+<li>在所有数据范围内进⾏淘汰，包括allkeys-lru、allkeys-random、allkeys-lfu（Redis 4.0后新增）三种。</li>
+<li>不进⾏数据淘汰的策略，只有noeviction这⼀种。</li>
+</ul>
+<h4 id="过期时间淘汰">
+  过期时间淘汰
+  <a class="anchor" href="#%e8%bf%87%e6%9c%9f%e6%97%b6%e9%97%b4%e6%b7%98%e6%b1%b0">#</a>
+</h4>
+<ul>
+<li>volatile-ttl在筛选时，会针对设置了过期时间的键值对，根据过期时间的先后进⾏删除，越早过期的越先 被删除。</li>
+<li>volatile-random就像它的名称⼀样，在设置了过期时间的键值对中，进⾏随机删除。</li>
+<li>volatile-lru会使⽤LRU算法筛选设置了过期时间的键值对。</li>
+<li>volatile-lfu会使⽤LFU算法选择设置了过期时间的键值对。</li>
+</ul>
+<h4 id="所有数据淘汰">
+  所有数据淘汰
+  <a class="anchor" href="#%e6%89%80%e6%9c%89%e6%95%b0%e6%8d%ae%e6%b7%98%e6%b1%b0">#</a>
+</h4>
+<ul>
+<li>allkeys-random策略，从所有键值对中随机选择并删除数据；</li>
+<li>allkeys-lru策略，使⽤LRU算法在所有数据中进⾏筛选。</li>
+<li>allkeys-lfu策略，使⽤LFU算法在所有数据中进⾏筛选。</li>
+</ul>
+<h4 id="lru">
+  LRU
+  <a class="anchor" href="#lru">#</a>
+</h4>
+<p>链表管理开销大，Redis默认会记录 每个数据的最近⼀次访问的时间戳（由键值对数据结构RedisObject中的lru字段记录）。然后，Redis在决 定淘汰的数据时，<strong>第⼀次</strong>会随机选出N个数据，把它们作为⼀个候选集合。接下来，Redis会⽐较这N个数据 的lru字段，把lru字段值最⼩的数据从缓存中淘汰出去。</p>
+<p><strong>第二次</strong>能进 ⼊候选集合的数据的lru字段值必须⼩于候选集合中最⼩的lru值</p>
+<h4 id="lru使用建议">
+  LRU使用建议
+  <a class="anchor" href="#lru%e4%bd%bf%e7%94%a8%e5%bb%ba%e8%ae%ae">#</a>
+</h4>
+<ul>
+<li>优先使⽤allkeys-lru策略。这样，可以充分利⽤LRU这⼀经典缓存算法的优势，把最近最常访问的数据留 在缓存中，提升应⽤的访问性能。如果你的业务数据中有明显的冷热数据区分，我建议你使⽤allkeys-lru 策略。</li>
+<li>如果业务应⽤中的数据访问频率相差不⼤，没有明显的冷热数据区分，建议使⽤allkeys-random策略， 随机选择淘汰的数据就⾏。</li>
+<li>如果你的业务中有置顶的需求，⽐如置顶新闻、置顶视频，那么，可以使⽤volatile-lru策略，同时不给这 些置顶数据设置过期时间。这样⼀来，这些需要置顶的数据⼀直不会被删除，⽽其他数据会在过期时根据 LRU规则进⾏筛选。</li>
+</ul>
+<hr>
+<h3 id="缓存一致性">
+  缓存一致性
+  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e4%b8%80%e8%87%b4%e6%80%a7">#</a>
+</h3>
+<table>
+<thead>
+<tr>
+<th>操作顺序</th>
+<th>是否有并发请求</th>
+<th>潜在问题</th>
+<th>现象</th>
+<th>应对方案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>先删缓存，再更新数据库</td>
+<td>无</td>
+<td>缓存删除成功，但数据库更新失败</td>
+<td>应用从数据库读到旧数据</td>
+<td>重试数据库更新</td>
+</tr>
+<tr>
+<td>先删缓存，再更新数据库</td>
+<td>有</td>
+<td>缓存删除后，尚未更新数据库，有并发读请求</td>
+<td>并发请求从数据库读到旧值，并且更新到缓存，导致后续请求都读取旧值</td>
+<td>延迟双删</td>
+</tr>
+<tr>
+<td>先更新数据库，再删除缓存</td>
+<td>无</td>
+<td>数据库更新成功，但缓存删除失败</td>
+<td>应用从缓存读到旧数据</td>
+<td>重试缓存删除</td>
+</tr>
+<tr>
+<td>先更新数据库，再删除缓存</td>
+<td>有</td>
+<td>数据库更新成功后，尚未删除缓存，有并发读</td>
+<td>并发请求从缓存中读到旧值</td>
+<td>等待缓存删除完成，期间会有不一致数据短暂存在</td>
+</tr>
+</tbody>
+</table>
+<p>优先使⽤先更新数 据库再删除缓存的⽅法，原因主要有两个：</p>
+<ul>
+<li>先删除缓存值再更新数据库，有可能导致请求因缓存缺失⽽访问数据库，给数据库带来压⼒；</li>
+<li>如果业务应⽤中读取数据库和写缓存的时间不好估算，那么，延迟双删中的等待时间就不好设置。</li>
+</ul>
+<p>如果业务层要求必须读取⼀致的数据，那 么，我们就需要在更新数据库时，先在Redis缓存客⼾端<strong>暂存并发读请求</strong>，等数据库更新完、缓存值删除 后，再读取数据，从⽽保证数据⼀致性。</p>
+<hr>
+<h3 id="缓存雪崩击穿穿透">
+  缓存雪崩、击穿、穿透
+  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e9%9b%aa%e5%b4%a9%e5%87%bb%e7%a9%bf%e7%a9%bf%e9%80%8f">#</a>
+</h3>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>原因</th>
+<th>方案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>缓存雪崩</td>
+<td>大量数据同时过期<!-- raw HTML omitted -->缓存实例宕机</td>
+<td>给缓存数据的过期时间加上小的随机数，避免同时过期<!-- raw HTML omitted -->服务降级<!-- raw HTML omitted -->服务熔断<!-- raw HTML omitted -->请求限流<!-- raw HTML omitted -->Redis缓存主从集群</td>
+</tr>
+<tr>
+<td>缓存击穿</td>
+<td>访问非常频繁的热点数据过期</td>
+<td>不给热点数据设置过期时间，一直保留</td>
+</tr>
+<tr>
+<td>缓存穿透</td>
+<td>缓存和数据库中都没有要访问的数据</td>
+<td>缓存空值或缺省值<!-- raw HTML omitted -->使用布隆过滤器快速判断<!-- raw HTML omitted -->请求入口前端对请求合法性检查</td>
+</tr>
+</tbody>
+</table>
+<p>尽量使⽤预防式⽅案：</p>
+<ul>
+<li>针对缓存雪崩，合理地设置数据过期时间，以及搭建⾼可靠缓存集群；</li>
+<li>针对缓存击穿，在缓存访问⾮常频繁的热点数据时，不要设置过期时间；</li>
+<li>针对缓存穿透，提前在⼊⼝前端实现恶意请求检测，或者规范数据库的数据删除操作，避免误删除</li>
+</ul>
+<hr>
+<h3 id="缓存污染">
+  缓存污染
+  <a class="anchor" href="#%e7%bc%93%e5%ad%98%e6%b1%a1%e6%9f%93">#</a>
+</h3>
+<h4 id="lfu">
+  LFU
+  <a class="anchor" href="#lfu">#</a>
+</h4>
+<p>LFU缓存策略是在LRU策略基础上，为每个数据增加了⼀个计数器，来统计这个数据的访问次数。当使⽤ LFU策略筛选淘汰数据时，⾸先会根据数据的访问次数进⾏筛选，把访问次数最低的数据淘汰出缓存。如果 两个数据的访问次数相同，LFU策略再⽐较这两个数据的访问时效性，把距离上⼀次访问时间更久的数据淘 汰出缓存。</p>
+<p>Redis在实现LFU策略的时候，只是把原来24bit⼤⼩的lru字段，⼜进⼀步拆分成了两部分。</p>
+<ul>
+<li>ldt值：lru字段的前16bit，表⽰数据的访问时间戳；</li>
+<li>counter值：lru字段的后8bit，表⽰数据的访问次数。</li>
+</ul>
+<p>在实现LFU策略时，Redis并没有采⽤数据每被访问⼀次，就给 对应的counter值加1的计数规则，⽽是采⽤了⼀个更优化的计数规则。</p>
+<p>我们可以通过设置不同的lfu_log_factor配置项，来控制计数器值增加的速度，避 免counter值很快就到255了。</p>
+<p>LRU和LFU两个策略关注的数据访问特征各有侧重， LRU策略更加关注数据的时效性，⽽LFU策略更加关注数据的访问频次。</p>
+<hr>
+<h3 id="redis的两种原操作法">
+  Redis的两种原⼦操作⽅法
+  <a class="anchor" href="#redis%e7%9a%84%e4%b8%a4%e7%a7%8d%e5%8e%9f%e6%93%8d%e4%bd%9c%e6%b3%95">#</a>
+</h3>
+<ul>
+<li>把多个操作在Redis中实现成⼀个操作，也就是单命令操作；  (INCR/DECR)</li>
+<li>把多个操作写到⼀个Lua脚本中，以原⼦性⽅式执⾏单个Lua脚本。</li>
+</ul>
+<hr>
+<h3 id="redis分布式锁">
+  Redis分布式锁
+  <a class="anchor" href="#redis%e5%88%86%e5%b8%83%e5%bc%8f%e9%94%81">#</a>
+</h3>
+<p>加锁</p>
+<ul>
+<li>加锁包括了读取锁变量、检查锁变量值和设置锁变量值三个操作，但需要以原⼦操作的⽅式完成，所 以，我们使⽤SET命令带上NX选项来实现加锁；</li>
+<li>锁变量需要设置过期时间，以免客⼾端拿到锁后发⽣异常，导致锁⼀直⽆法释放，所以，我们在SET命令 执⾏时加上EX/PX选项，设置其过期时间；</li>
+<li>锁变量的值需要能区分来⾃不同客⼾端的加锁操作，以免在释放锁时，出现误释放操作，所以，我们使 ⽤SET命令设置锁变量值时，每个客⼾端设置的值是⼀个唯⼀值，⽤于标识客⼾端。</li>
+</ul>
+<p>释放锁</p>
+<p>释放锁也包含了读取锁变量值、判断锁变量值和删除锁变量三个操作，不过，我们⽆法使⽤单 个命令来实现，所以，我们可以采⽤Lua脚本执⾏释放锁操作，通过Redis原⼦性地执⾏Lua脚本，来保证释 放锁操作的原⼦性。</p>
+<p>单个Redis实例实现分布式锁时，会⾯临实例异常或崩溃的情况。Redis也提供了Redlock算法，⽤来实现基于多个实例的分布式锁</p>
+<hr>
+<h3 id="redis的事务机制能保证哪些属性">
+  Redis的事务机制能保证哪些属性？
+  <a class="anchor" href="#redis%e7%9a%84%e4%ba%8b%e5%8a%a1%e6%9c%ba%e5%88%b6%e8%83%bd%e4%bf%9d%e8%af%81%e5%93%aa%e4%ba%9b%e5%b1%9e%e6%80%a7">#</a>
+</h3>
+<h4 id="原子性">
+  原子性
+  <a class="anchor" href="#%e5%8e%9f%e5%ad%90%e6%80%a7">#</a>
+</h4>
+<p>保证原子性：在执⾏EXEC命令前，客⼾端发送的操作命令本⾝就有错误。（⽐如语法错误，使⽤了不存在 的命令），在命令⼊队时就被Redis实例判断出来了。</p>
+<p>不保证原子性：事务操作⼊队时，命令和操作的数据类型不匹配，但Redis实例没有检查出错误。</p>
+<p>总结：</p>
+<ul>
+<li>命令⼊队时就报错，会放弃事务执⾏，保证原⼦性；</li>
+<li>命令⼊队时没报错，实际执⾏时报错，不保证原⼦性；</li>
+<li>EXEC命令执⾏时实例故障，如果开启了AOF⽇志，可以保证原⼦性。</li>
+</ul>
+<h4 id="一致性">
+  一致性
+  <a class="anchor" href="#%e4%b8%80%e8%87%b4%e6%80%a7">#</a>
+</h4>
+<p>在命令执⾏错误或Redis发⽣故障的情况下，Redis事务机制对⼀致性属性是有保证的</p>
+<h4 id="隔离性">
+  隔离性
+  <a class="anchor" href="#%e9%9a%94%e7%a6%bb%e6%80%a7">#</a>
+</h4>
+<ol>
+<li>并发操作在EXEC命令前执⾏，此时，隔离性的保证要使⽤WATCH机制来实现，否则隔离性⽆法保证；</li>
+<li>并发操作在EXEC命令后执⾏，此时，隔离性可以保证。</li>
+</ol>
+<h4 id="持久性">
+  持久性
+  <a class="anchor" href="#%e6%8c%81%e4%b9%85%e6%80%a7">#</a>
+</h4>
+<p>不管Redis采⽤什么持久化模式RDB、AOF，事务的持久性属性是得不到保证的。</p>
+<h3 id="小结">
+  小结
+  <a class="anchor" href="#%e5%b0%8f%e7%bb%93">#</a>
+</h3>
+<p>Redis通过MULTI、EXEC、DISCARD和WATCH四个命令来⽀ 持事务机制，这4个命令的作⽤</p>
+<hr>
+<h2 id="主从故障">
+  主从故障
+  <a class="anchor" href="#%e4%b8%bb%e4%bb%8e%e6%95%85%e9%9a%9c">#</a>
+</h2>
+<h3 id="主从数据不一致">
+  主从数据不一致
+  <a class="anchor" href="#%e4%b8%bb%e4%bb%8e%e6%95%b0%e6%8d%ae%e4%b8%8d%e4%b8%80%e8%87%b4">#</a>
+</h3>
+<p>原因：主从库间的命令复制是异步进⾏的。</p>
+<p>解决：</p>
+<ul>
+<li>在硬件环境配置⽅⾯，我们要尽量保证主从库间的⽹络连接状况良好。例如，我们要避免把主从库部 署在不同的机房，或者是避免把⽹络通信密集的应⽤（例如数据分析应⽤）和Redis主从库部署在⼀起。</li>
+<li>另外，我们还可以开发⼀个外部程序来监控主从库间的复制进度。开发⼀个监控程序，先⽤INFO replication命 令查到主、从库的进度，然后，我们⽤master_repl_offset减去slave_repl_offset，这样就能得到从库和主 库间的复制进度差值了。</li>
+</ul>
+<h3 id="读取过期数据">
+  读取过期数据
+  <a class="anchor" href="#%e8%af%bb%e5%8f%96%e8%bf%87%e6%9c%9f%e6%95%b0%e6%8d%ae">#</a>
+</h3>
+<p>Redis同时使⽤了两种策略来删除过期的数据，分别是惰性删除策略和定期删除策略。</p>
+<p>是Redis 3.2之前的版本，那么，从库在服务读请求时，并 不会判断数据是否过期，⽽是会返回过期数据。在3.2版本后，Redis做了改进，如果读取的数据已经过期 了，从库虽然不会删除，但是会返回空值，这就避免了客⼾端读到过期数据。所以，在应⽤主从集群时，尽 量使⽤Redis 3.2及以上版本。</p>
+<h4 id="小结-1">
+  小结
+  <a class="anchor" href="#%e5%b0%8f%e7%bb%93-1">#</a>
+</h4>
+<ul>
+<li>主从数据不⼀致。Redis采⽤的是异步复制，所以⽆法实现强⼀致性保证（主从数据时时刻刻保持⼀致），数据不⼀致是难以避免的。我给你提供了应对⽅法：保证良好⽹络环境，以及使⽤程序监控从库复 制进度，⼀旦从库复制进度超过阈值，不让客⼾端连接从库。</li>
+<li>对于读到过期数据，这是可以提前规避的，⼀个⽅法是，使⽤Redis 3.2及以上版本；另外，你也可以使 ⽤EXPIREAT/PEXPIREAT命令设置过期时间，避免从库上的数据过期时间滞后。不过，这⾥有个地⽅需要 注意下，因为EXPIREAT/PEXPIREAT设置的是时间点，所以，主从节点上的时钟要保持⼀致，具体的做 法是，让主从节点和相同的NTP服务器（时间服务器）进⾏时钟同步。</li>
+</ul>
+<h3 id="不合理配置项导致的服务挂掉">
+  不合理配置项导致的服务挂掉
+  <a class="anchor" href="#%e4%b8%8d%e5%90%88%e7%90%86%e9%85%8d%e7%bd%ae%e9%a1%b9%e5%af%bc%e8%87%b4%e7%9a%84%e6%9c%8d%e5%8a%a1%e6%8c%82%e6%8e%89">#</a>
+</h3>
+<h4 id="protected-mode-配置项">
+  protected-mode 配置项
+  <a class="anchor" href="#protected-mode-%e9%85%8d%e7%bd%ae%e9%a1%b9">#</a>
+</h4>
+<p>这个配置项的作⽤是限定哨兵实例能否被其他服务器访问。当这个配置项设置为yes时，哨兵实例只能在部 署的服务器本地进⾏访问。当设置为no时，其他服务器也可以访问这个哨兵实例。</p>
+<p>我们在应⽤主从集群时，要注意将protected-mode 配置项设置为no，并且将bind配置项设置为其它 哨兵实例的IP地址。这样⼀来，只有在bind中设置了IP地址的哨兵，才可以访问当前实例，既保证了实例间 能够通信进⾏主从切换，也保证了哨兵的安全性。</p>
+<h4 id="cluster-node-timeout配置项">
+  cluster-node-timeout配置项
+  <a class="anchor" href="#cluster-node-timeout%e9%85%8d%e7%bd%ae%e9%a1%b9">#</a>
+</h4>
+<p>这个配置项设置了Redis Cluster中实例响应⼼跳消息的超时时间。</p>
+<p>Redis Cluster集群中为每个实例配置了“⼀主⼀从”模式时，如果主实例发⽣故障，从实例会切换 为主实例，受⽹络延迟和切换操作执⾏的影响，切换时间可能较⻓，就会导致实例的⼼跳超时（超出 cluster-node-timeout）。</p>
+<p>将cluster-node-timeout调⼤些（例如10到20秒）。</p>
+<hr>
+<h3 id="脑裂">
+  脑裂
+  <a class="anchor" href="#%e8%84%91%e8%a3%82">#</a>
+</h3>
+<ol>
+<li>和主库部署在同⼀台服务器上的其他程序临时占⽤了⼤量资源（例如CPU资源），导致主库资源使⽤受 限，短时间内⽆法响应⼼跳。其它程序不再使⽤资源时，主库⼜恢复正常。</li>
+<li>主库⾃⾝遇到了阻塞的情况，例如，处理bigkey或是发⽣内存swap（你可以复习下第19讲中总结的导致 实例阻塞的原因），短时间内⽆法响应⼼跳，等主库阻塞解除后，⼜恢复正常的请求处理了。</li>
+</ol>
+<p>通过合理地配置参数min-slaves-to-write和min-slaves-max-lag，来预防脑裂的发⽣。</p>
+<p>假设从库有K个，可以将min-slaves-to-write设置为K/2+1（如果K等于1，就设为 1），将min-slaves-max-lag设置为⼗⼏秒（例如10〜20s），在这个配置下，如果有⼀半以上的从库和主 库进⾏的ACK消息延迟超过⼗⼏秒，我们就禁⽌主库接收客⼾端写请求。</p>
+<p>该方式还是可能会造成数据不一致，只能减少丢失的</p>
+<hr>
+<h3 id="redis秒杀">
+  Redis秒杀
+  <a class="anchor" href="#redis%e7%a7%92%e6%9d%80">#</a>
+</h3>
+<ol>
+<li>
+<p><strong>⽀持⾼并发</strong>。这个很简单，Redis本⾝⾼速处理请求的特性就可以⽀持⾼并发。⽽且，如果有多个秒杀商 品，我们也可以使⽤切⽚集群，⽤不同的实例保存不同商品的库存，这样就避免，使⽤单个实例导致所 有的秒杀请求都集中在⼀个实例上的问题了。不过，需要注意的是，当使⽤切⽚集群时，我们要先⽤CRC 算法计算不同秒杀商品key对应的Slot，然后，我们在分配Slot和实例对应关系时，才能把不同秒杀商品 对应的Slot分配到不同实例上保存。</p>
+</li>
+<li>
+<p><strong>保证库存查验和库存扣减原⼦性执⾏</strong>。针对这条要求，我们就可以使⽤Redis的原⼦操作或是分布式锁这 两个功能特性来⽀撑了。库存查验和库存扣减这两个操作要保证⼀起执⾏，⼀个直接的⽅法就是使⽤Redis的原⼦操作，这里使用LUA脚本。分布式锁，即拿到锁，查验库存等&hellip;</p>
+</li>
+</ol>
+<p>使⽤切⽚集群中的不同实例来分别保存分布式锁和商品库存信息。</p>
+<ol>
+<li>前端静态⻚⾯的设计。秒杀⻚⾯上能静态化处理的⻚⾯元素，我们都要尽量静态化，这样可以充分利⽤ CDN或浏览器缓存服务秒杀开始前的请求。</li>
+<li>请求拦截和流控。在秒杀系统的接⼊层，对恶意请求进⾏拦截，避免对系统的恶意攻击，例如使⽤⿊名单禁⽌恶意IP进⾏访问。如果Redis实例的访问压⼒过⼤，为了避免实例崩溃，我们也需要在接⼊层进⾏ 限流，控制进⼊秒杀系统的请求数量。</li>
+<li>库存信息过期时间处理。Redis中保存的库存信息其实是数据库的缓存，为了避免缓存击穿问题，我们不 要给库存信息设置过期时间。</li>
+<li>数据库订单异常处理。如果数据库没能成功处理订单，可以增加订单重试功能，保证订单最终能被成功 处理。</li>
+</ol>
+<hr>
+<h3 id="数据倾斜">
+  数据倾斜
+  <a class="anchor" href="#%e6%95%b0%e6%8d%ae%e5%80%be%e6%96%9c">#</a>
+</h3>
+<p>数据量倾斜：在某些情况下，实例上的数据分布不均衡，某个实例上的数据特别多。</p>
+<ol>
+<li>数据中有bigkey，导致某个实例的数据量增加；</li>
+<li>Slot⼿⼯分配不均，导致某个或某些实例上有⼤量数据；</li>
+<li>使⽤了Hash Tag，导致数据集中到某些实例上。</li>
+</ol>
+<p>数据访问倾斜：虽然每个集群实例上的数据量相差不⼤，但是某个实例上的数据是热点数据，被访问得⾮ 常频繁。⽽数据访问倾斜的主要原因就是有热点数据存在，导致⼤量访问请求集中到了热点数据所在的实例上。</p>
+<table>
+<thead>
+<tr>
+<th>倾斜类型</th>
+<th>倾斜成因</th>
+<th>应对方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据量倾斜</td>
+<td>存在bigkey</td>
+<td>业务层避免创建bigkey<!-- raw HTML omitted -->把集合类型的bigkey拆分成多个小集合，分散保存</td>
+</tr>
+<tr>
+<td>数据量倾斜</td>
+<td>Slot手工分配不均</td>
+<td>指定运维规范，避免把过多Slot分配到一个实例上</td>
+</tr>
+<tr>
+<td>数据量倾斜</td>
+<td>使用Hash Tag，导致大量数据集中到一个Slot</td>
+<td>如果Hash Tag会造成数据倾斜，有限避免数据倾斜，不适用Hash Tag</td>
+</tr>
+<tr>
+<td>数据访问倾斜</td>
+<td>存在热点数据</td>
+<td>采用带有不同key前缀的多副本方法</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="rediscluster通信">
+  RedisCluster通信
+  <a class="anchor" href="#rediscluster%e9%80%9a%e4%bf%a1">#</a>
+</h3>
+<p>Redis Cluster实例间以<strong>Gossip协议</strong>进⾏通信的机制。Redis Cluster运⾏时，各实例间 需要通过<strong>PING、PONG消息</strong>进⾏信息交换，这些⼼跳消息包含了当前实例和部分其它实例的状态信息，以及 <strong>Slot分配信息</strong>。这种通信机制有助于Redis Cluster中的所有实例都拥有完整的集群状态信息。</p>
+<p>如果我们盲⽬地对Redis Cluster进⾏扩容，就可能 会遇到集群性能变慢的情况。虽然我们可以通过调整cluster-node-timeout配置项减少⼼跳消息的占⽤带宽 情况，但是，在实际应⽤中，如果不是特别需要⼤容量集群，我建议你把Redis Cluster 的规模控制在 400~500个实例。</p>
+<p>假设单个实例每秒能⽀撑8万请求操作（8万QPS），每个主实例配置1个从实例，那么，400~ 500个实例可 ⽀持 1600万~2000万QPS（200/250个主实例*8万QPS=1600/2000万QPS），这个吞吐量性能可以满⾜不少 业务应⽤的需求。</p>
 </article>
  
       
@@ -236,7 +1453,52 @@ https://github.com/alex-shpak/hugo-book
   
 <nav id="TableOfContents">
   <ul>
-    <li><a href="#缓存数据库-redis">缓存数据库 redis</a></li>
+    <li>
+      <ul>
+        <li></li>
+        <li><a href="#主从">主从</a></li>
+        <li><a href="#哨兵">哨兵</a></li>
+        <li><a href="#redis-cluster">Redis Cluster</a></li>
+        <li><a href="#string的坑">String的坑</a></li>
+        <li><a href="#统计">统计</a></li>
+        <li><a href="#redis的基本对象结构">Redis的基本对象结构</a></li>
+        <li><a href="#redis中保存时间序列数据">Redis中保存时间序列数据</a></li>
+        <li><a href="#redis消息队列">Redis消息队列</a></li>
+      </ul>
+    </li>
+    <li><a href="#如何避免单线程模型的阻塞">如何避免单线程模型的阻塞？</a>
+      <ul>
+        <li><a href="#阻塞点">阻塞点</a></li>
+        <li><a href="#哪些阻塞点可以异步执行">哪些阻塞点可以异步执行</a></li>
+        <li><a href="#异步的线程机制">异步的⼦线程机制</a></li>
+        <li><a href="#cpu对redis影响">CPU对redis影响</a></li>
+        <li><a href="#redis响应">Redis响应</a></li>
+        <li><a href="#checklist">checklist</a></li>
+        <li><a href="#内存碎片">内存碎片</a></li>
+        <li><a href="#内存空间效率">内存空间效率</a></li>
+        <li><a href="#总结">总结</a></li>
+        <li><a href="#缓存类型">缓存类型</a></li>
+        <li><a href="#缓存淘汰策略">缓存淘汰策略</a></li>
+        <li><a href="#缓存一致性">缓存一致性</a></li>
+        <li><a href="#缓存雪崩击穿穿透">缓存雪崩、击穿、穿透</a></li>
+        <li><a href="#缓存污染">缓存污染</a></li>
+        <li><a href="#redis的两种原操作法">Redis的两种原⼦操作⽅法</a></li>
+        <li><a href="#redis分布式锁">Redis分布式锁</a></li>
+        <li><a href="#redis的事务机制能保证哪些属性">Redis的事务机制能保证哪些属性？</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+    <li><a href="#主从故障">主从故障</a>
+      <ul>
+        <li><a href="#主从数据不一致">主从数据不一致</a></li>
+        <li><a href="#读取过期数据">读取过期数据</a></li>
+        <li><a href="#不合理配置项导致的服务挂掉">不合理配置项导致的服务挂掉</a></li>
+        <li><a href="#脑裂">脑裂</a></li>
+        <li><a href="#redis秒杀">Redis秒杀</a></li>
+        <li><a href="#数据倾斜">数据倾斜</a></li>
+        <li><a href="#rediscluster通信">RedisCluster通信</a></li>
+      </ul>
+    </li>
   </ul>
 </nav>
 

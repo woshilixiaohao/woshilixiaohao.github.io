@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>老三炮的笔记</title>
+    <link>https://woshilixiaohao.github.io/docs/tech/mq/</link>
+    <description>Recent content on 老三炮的笔记</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="https://woshilixiaohao.github.io/docs/tech/mq/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/mq/kafka/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/mq/kafka/</guid>
+      <description>partition 并行处理 顺序写磁盘，充分利用磁盘特性 利用了现代操作系统分页存储 Page Cache 来利用内存提高 I/O 效率 采用了零拷贝技术 Producer 生产的数据持久化到 broker，采用 mmap 文件映射，实现顺序的快速写入 Customer 从 broker 读取数据，采用 sendfile，将磁盘文件读到 OS 内核缓冲区后，转到 NIO buffer 进行网络发送，减少 CPU 消耗
+消息不丢配置
+ 不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。记住，一定要使用带有回调通知的 send 方法。 设置 acks = all。acks 是 Producer 的一个参数，代表了你对“已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是“已提交”。这是最高等级的“已提交”定义。 设置 retries 为一个较大的值。这里的 retries 同样是 Producer 的参数，对应前面提到的 Producer 自动重试。当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &amp;gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。 设置 unclean.leader.election.enable = false。这是 Broker 端的参数，它控制的是哪些 Broker 有资格竞选分区的 Leader。如果一个 Broker 落后原先的 Leader 太多，那么它一旦成为新的 Leader，必然会造成消息的丢失。故一般都要将该参数设置成 false，即不允许这种情况的发生。 设置 replication.</description>
+    </item>
+    
+  </channel>
+</rss>

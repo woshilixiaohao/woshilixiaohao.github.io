@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="partition 并行处理 顺序写磁盘，充分利用磁盘特性 利用了现代操作系统分页存储 Page Cache 来利用内存提高 I/O 效率 采用了零拷贝技术 Producer 生产的数据持久化到 broker，采用 mmap 文件映射，实现顺序的快速写入 Customer 从 broker 读取数据，采用 sendfile，将磁盘文件读到 OS 内核缓冲区后，转到 NIO buffer 进行网络发送，减少 CPU 消耗
+消息不丢配置
+ 不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。记住，一定要使用带有回调通知的 send 方法。 设置 acks = all。acks 是 Producer 的一个参数，代表了你对“已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是“已提交”。这是最高等级的“已提交”定义。 设置 retries 为一个较大的值。这里的 retries 同样是 Producer 的参数，对应前面提到的 Producer 自动重试。当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。 设置 unclean.leader.election.enable = false。这是 Broker 端的参数，它控制的是哪些 Broker 有资格竞选分区的 Leader。如果一个 Broker 落后原先的 Leader 太多，那么它一旦成为新的 Leader，必然会造成消息的丢失。故一般都要将该参数设置成 false，即不允许这种情况的发生。 设置 replication.">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
+<meta property="og:description" content="partition 并行处理 顺序写磁盘，充分利用磁盘特性 利用了现代操作系统分页存储 Page Cache 来利用内存提高 I/O 效率 采用了零拷贝技术 Producer 生产的数据持久化到 broker，采用 mmap 文件映射，实现顺序的快速写入 Customer 从 broker 读取数据，采用 sendfile，将磁盘文件读到 OS 内核缓冲区后，转到 NIO buffer 进行网络发送，减少 CPU 消耗
+消息不丢配置
+ 不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。记住，一定要使用带有回调通知的 send 方法。 设置 acks = all。acks 是 Producer 的一个参数，代表了你对“已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是“已提交”。这是最高等级的“已提交”定义。 设置 retries 为一个较大的值。这里的 retries 同样是 Producer 的参数，对应前面提到的 Producer 自动重试。当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。 设置 unclean.leader.election.enable = false。这是 Broker 端的参数，它控制的是哪些 Broker 有资格竞选分区的 Leader。如果一个 Broker 落后原先的 Leader 太多，那么它一旦成为新的 Leader，必然会造成消息的丢失。故一般都要将该参数设置成 false，即不允许这种情况的发生。 设置 replication." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" /><meta property="article:section" content="docs" />
+
+
+
+<title>Kafka | 老三炮的笔记</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.55521e020be85709ff7a38b6c916ae95096e8bcaa216ac4aaaff69e27781036c.js" integrity="sha256-VVIeAgvoVwn/eji2yRaulQlui8qiFqxKqv9p4neBA2w=" crossorigin="anonymous"></script>
+
+  <script defer src="/sw.min.6f6f90fcb8eb1c49ec389838e6b801d0de19430b8e516902f8d75c3c8bd98739.js" integrity="sha256-b2&#43;Q/LjrHEnsOJg45rgB0N4ZQwuOUWkC&#43;NdcPIvZhzk=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>老三炮的笔记</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/" class="">Interview</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Redis面试题</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/" class="">Tech</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/" class="">Db</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/mysql/" class="">Mysql</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/" class="">Go</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="">Atomic包源码解析</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" class="">Golang内存分配</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="">Go常用设计模式</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/" class="">Unsafe包</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/" class="">Java</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/" class="">Mq</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" class=" active">Kafka</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/" class="">Nosql</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/redis/" class="">Redis</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Kafka</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#isr">ISR</a></li>
+        <li><a href="#控制器">控制器</a></li>
+      </ul>
+    </li>
+    <li><a href="#高水位的作用">高水位的作用</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><p>partition 并行处理
+顺序写磁盘，充分利用磁盘特性
+利用了现代操作系统分页存储 Page Cache 来利用内存提高 I/O 效率
+采用了零拷贝技术 Producer 生产的数据持久化到 broker，采用 mmap 文件映射，实现顺序的快速写入 Customer 从 broker 读取数据，采用 sendfile，将磁盘文件读到 OS 内核缓冲区后，转到 NIO buffer 进行网络发送，减少 CPU 消耗</p>
+<p>消息不丢配置</p>
+<ol>
+<li>不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。记住，一定要使用带有回调通知的 send 方法。</li>
+<li>设置 acks = all。acks 是 Producer 的一个参数，代表了你对“已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是“已提交”。这是最高等级的“已提交”定义。</li>
+<li>设置 retries 为一个较大的值。这里的 retries 同样是 Producer 的参数，对应前面提到的 Producer 自动重试。当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。</li>
+<li>设置 unclean.leader.election.enable = false。这是 Broker 端的参数，它控制的是哪些 Broker 有资格竞选分区的 Leader。如果一个 Broker 落后原先的 Leader 太多，那么它一旦成为新的 Leader，必然会造成消息的丢失。故一般都要将该参数设置成 false，即不允许这种情况的发生。</li>
+<li>设置 replication.factor &gt;= 3。这也是 Broker 端的参数。其实这里想表述的是，最好将消息多保存几份，毕竟目前防止消息丢失的主要机制就是冗余。</li>
+<li>设置 min.insync.replicas &gt; 1。这依然是 Broker 端参数，控制的是消息至少要被写入到多少个副本才算是“已提交”。设置成大于 1 可以提升消息持久性。在实际环境中千万不要使用默认值 1。</li>
+<li>确保 replication.factor &gt; min.insync.replicas。如果两者相等，那么只要有一个副本挂机，整个分区就无法正常工作了。我们不仅要改善消息的持久性，防止数据丢失，还要在不降低可用性的基础上完成。推荐设置成 replication.factor = min.insync.replicas + 1。</li>
+<li>确保消息消费完成再提交。Consumer 端有个参数 enable.auto.commit，最好把它设置成 false，并采用手动提交位移的方式。就像前面说的，这对于单 Consumer 多线程处理的场景而言是至关重要的。</li>
+</ol>
+<p>幂等和事务</p>
+<p>幂等性 Producer 和事务型 Producer 都是 Kafka 社区力图为 Kafka 实现精确一次处理语义所提供的工具，只是它们的作用范围是不同的。幂等性 Producer 只能保证单分区、单会话上的消息幂等性；而事务能够保证跨分区、跨会话间的幂等性。从交付语义上来看，自然是事务型 Producer 能做的更多。</p>
+<p>不过，切记天下没有免费的午餐。比起幂等性 Producer，事务型 Producer 的性能要更差，在实际使用过程中，我们需要仔细评估引入事务的开销，切不可无脑地启用事务。</p>
+<p>Rebalance</p>
+<p><strong>Rebalance 本质上是一种协议，规定了一个 Consumer Group 下的所有 Consumer 如何达成一致，来分配订阅 Topic 的每个分区</strong>。比如某个 Group 下有 20 个 Consumer 实例，它订阅了一个具有 100 个分区的 Topic。正常情况下，Kafka 平均会为每个 Consumer 分配 5 个分区。这个分配的过程就叫 Rebalance。</p>
+<p>那么 Consumer Group 何时进行 Rebalance 呢？Rebalance 的触发条件有 3 个。</p>
+<ol>
+<li>组成员数发生变更。比如有新的 Consumer 实例加入组或者离开组，抑或是有 Consumer 实例崩溃被“踢出”组。</li>
+<li>订阅主题数发生变更。Consumer Group 可以使用正则表达式的方式订阅主题，比如 consumer.subscribe(Pattern.compile(“t.*c”)) 就表明该 Group 订阅所有以字母 t 开头、字母 c 结尾的主题。在 Consumer Group 的运行过程中，你新创建了一个满足这样条件的主题，那么该 Group 就会发生 Rebalance。</li>
+<li>订阅主题的分区数发生变更。Kafka 当前只能允许增加一个主题的分区数。当分区数增加时，就会触发订阅该主题的所有 Group 开启 Rebalance。</li>
+</ol>
+<p>__consumer_offsets</p>
+<p><strong>将 Consumer 的位移数据作为一条条普通的 Kafka 消息，提交到 __consumer_offsets 中。可以这么说，__consumer_offsets 的主要作用是保存 Kafka 消费者的位移信息</strong></p>
+<p>避免rebalance</p>
+<p>Rebalance 发生的时机有三个：</p>
+<ul>
+<li>组成员数量发生变化</li>
+<li>订阅主题数量发生变化</li>
+<li>订阅主题的分区数发生变化</li>
+</ul>
+<p>后面两个通常都是运维的主动操作，所以它们引发的 Rebalance 大都是不可避免的。接下来，我们主要说说因为组成员数量变化而引发的 Rebalance 该如何避免。</p>
+<p><strong>第一类非必要 Rebalance 是因为未能及时发送心跳，导致 Consumer 被“踢出”Group 而引发的</strong>。因此，你需要仔细地设置<strong>session.timeout.ms 和 heartbeat.interval.ms</strong>的值。我在这里给出一些推荐数值，你可以“无脑”地应用在你的生产环境中。</p>
+<ul>
+<li>设置 session.timeout.ms = 6s。</li>
+<li>设置 heartbeat.interval.ms = 2s。</li>
+<li>要保证 Consumer 实例在被判定为“dead”之前，能够发送至少 3 轮的心跳请求，即 session.timeout.ms &gt;= 3 * heartbeat.interval.ms。</li>
+</ul>
+<p><strong>第二类非必要 Rebalance 是 Consumer 消费时间过长导致的</strong></p>
+<p><strong>max.poll.interval.ms</strong>参数值的设置显得尤为关键。如果要避免非预期的 Rebalance，你最好将该参数值设置得大一点，比你的下游最大处理时间稍长一点。就拿 MongoDB 这个例子来说，如果写 MongoDB 的最长时间是 7 分钟，那么你可以将该参数设置为 8 分钟左右。</p>
+<p>总而言之，我们一定要避免因为各种参数或逻辑不合理而导致的组成员意外离组或退出的情形，与之相关的主要参数有：</p>
+<ul>
+<li>session.timeout.ms</li>
+<li>heartbeat.interval.ms</li>
+<li>max.poll.interval.ms</li>
+<li>GC 参数</li>
+</ul>
+<p>CommitFailedException</p>
+<ol>
+<li><strong>缩短单条消息处理的时间</strong>。比如，之前下游系统消费一条消息的时间是 100 毫秒，优化之后成功地下降到 50 毫秒，那么此时 Consumer 端的 TPS 就提升了一倍。</li>
+<li><strong>增加 Consumer 端允许下游系统消费一批消息的最大时长</strong>。这取决于 Consumer 端参数 max.poll.interval.ms 的值。在最新版的 Kafka 中，该参数的默认值是 5 分钟。如果你的消费逻辑不能简化，那么提高该参数值是一个不错的办法。值得一提的是，Kafka 0.10.1.0 之前的版本是没有这个参数的，因此如果你依然在使用 0.10.1.0 之前的客户端 API，那么你需要增加 session.timeout.ms 参数的值。不幸的是，session.timeout.ms 参数还有其他的含义，因此增加该参数的值可能会有其他方面的“不良影响”，这也是社区在 0.10.1.0 版本引入 max.poll.interval.ms 参数，将这部分含义从 session.timeout.ms 中剥离出来的原因之一。</li>
+<li><strong>减少下游系统一次性消费的消息总数</strong>。这取决于 Consumer 端参数 max.poll.records 的值。当前该参数的默认值是 500 条，表明调用一次 KafkaConsumer.poll 方法，最多返回 500 条消息。可以说，该参数规定了单次 poll 方法能够返回的消息总数的上限。如果前两种方法对你都不适用的话，降低此参数值是避免 CommitFailedException 异常最简单的手段。</li>
+<li><strong>下游系统使用多线程来加速消费</strong>。这应该算是“最高级”同时也是最难实现的解决办法了。具体的思路就是，让下游系统手动创建多个消费线程处理 poll 方法返回的一批消息。之前你使用 Kafka Consumer 消费数据更多是单线程的，所以当消费速度无法匹及 Kafka Consumer 消息返回的速度时，它就会抛出 CommitFailedException 异常。如果是多线程，你就可以灵活地控制线程数量，随时调整消费承载能力，再配以目前多核的硬件条件，该方法可谓是防止 CommitFailedException 最高档的解决之道。事实上，很多主流的大数据流处理框架使用的都是这个方法，比如 Apache Flink 在集成 Kafka 时，就是创建了多个 KafkaConsumerThread 线程，自行处理多线程间的数据消费。不过，凡事有利就有弊，这个方法实现起来并不容易，特别是在多个线程间如何处理位移提交这个问题上，更是极容易出错。在专栏后面的内容中，我将着重和你讨论一下多线程消费的实现方案。</li>
+</ol>
+<p>简单来说，有 3 种方法。</p>
+<ol>
+<li>使用 Kafka 自带的命令行工具 kafka-consumer-groups 脚本。</li>
+<li>使用 Kafka Java Consumer API 编程。</li>
+<li>使用 Kafka 自带的 JMX 监控指标。</li>
+</ol>
+<p>副本</p>
+<p>第一，在 Kafka 中，副本分成两类：领导者副本（Leader Replica）和追随者副本（Follower Replica）。每个分区在创建时都要选举一个副本，称为领导者副本，其余的副本自动称为追随者副本。</p>
+<p>第二，Kafka 的副本机制比其他分布式系统要更严格一些。在 Kafka 中，<strong>追随者副本是不对外提供服务的</strong>。这就是说，任何一个追随者副本都不能响应消费者和生产者的读写请求。所有的请求都必须由领导者副本来处理，或者说，所有的读写请求都必须发往领导者副本所在的 Broker，由该 Broker 负责处理。追随者副本不处理客户端请求，它唯一的任务就是从领导者副本<strong>异步拉取</strong>消息，并写入到自己的提交日志中，从而实现与领导者副本的同步。</p>
+<p>第三，当领导者副本挂掉了，或者说领导者副本所在的 Broker 宕机时，Kafka 依托于 ZooKeeper 提供的监控功能能够实时感知到，并立即开启新一轮的领导者选举，从追随者副本中选一个作为新的领导者。老 Leader 副本重启回来后，只能作为追随者副本加入到集群中。</p>
+<p>2方面好处</p>
+<p>1.<strong>方便实现“Read-your-writes”</strong>。</p>
+<p>2.<strong>方便实现单调读（Monotonic Reads）</strong>。</p>
+<h3 id="isr">
+  ISR
+  <a class="anchor" href="#isr">#</a>
+</h3>
+<p>Leader 副本天然就在 ISR 中。也就是说，<strong>ISR 不只是追随者副本集合，它必然包括 Leader 副本。甚至在某些情况下，ISR 只有 Leader 这一个副本</strong>。</p>
+<p><strong>这个标准就是 Broker 端参数 replica.lag.time.max.ms 参数值</strong>。这个参数的含义是 Follower 副本能够落后 Leader 副本的最长时间间隔，当前默认值是 10 秒。这就是说，只要一个 Follower 副本落后 Leader 副本的时间不连续超过 10 秒，那么 Kafka 就认为该 Follower 副本与 Leader 是同步的，即使此时 Follower 副本中保存的消息明显少于 Leader 副本中的消息。</p>
+<p>Unclean 领导者选举（Unclean Leader Election）</p>
+<p>既然 ISR 是可以动态调整的，那么自然就可以出现这样的情形：ISR 为空。因为 Leader 副本天然就在 ISR 中，如果 ISR 为空了，就说明 Leader 副本也“挂掉”了，Kafka 需要重新选举一个新的 Leader。可是 ISR 是空，此时该怎么选举新 Leader 呢？</p>
+<p><strong>Kafka 把所有不在 ISR 中的存活副本都称为非同步副本</strong>。通常来说，非同步副本落后 Leader 太多，因此，如果选择这些副本作为新 Leader，就可能出现数据的丢失。毕竟，这些副本中保存的消息远远落后于老 Leader 中的消息。在 Kafka 中，选举这种副本的过程称为 Unclean 领导者选举。<strong>Broker 端参数 unclean.leader.election.enable 控制是否允许 Unclean 领导者选举</strong>。</p>
+<p><strong>不建议开启Unclean，会造成数据丢失</strong></p>
+<h3 id="控制器">
+  控制器
+  <a class="anchor" href="#%e6%8e%a7%e5%88%b6%e5%99%a8">#</a>
+</h3>
+<p><strong>控制器组件（Controller），是 Apache Kafka 的核心组件。它的主要作用是在 Apache ZooKeeper 的帮助下管理和协调整个 Kafka 集群</strong>。</p>
+<p><strong>第一个成功创建 /controller 节点的 Broker 会被指定为控制器</strong>。</p>
+<h4 id="控制器作用">
+  控制器作用
+  <a class="anchor" href="#%e6%8e%a7%e5%88%b6%e5%99%a8%e4%bd%9c%e7%94%a8">#</a>
+</h4>
+<p>1.<strong>主题管理（创建、删除、增加分区）</strong></p>
+<p>这里的主题管理，就是指控制器帮助我们完成对 Kafka 主题的创建、删除以及分区增加的操作。换句话说，当我们执行<strong>kafka-topics 脚本</strong>时，大部分的后台工作都是控制器来完成的。关于 kafka-topics 脚本，我会在专栏后面的内容中，详细介绍它的使用方法。</p>
+<p>2.<strong>分区重分配</strong></p>
+<p>分区重分配主要是指，<strong>kafka-reassign-partitions 脚本</strong>（关于这个脚本，后面我也会介绍）提供的对已有主题分区进行细粒度的分配功能。这部分功能也是控制器实现的。</p>
+<p>3.<strong>Preferred 领导者选举</strong></p>
+<p>Preferred 领导者选举主要是 Kafka 为了避免部分 Broker 负载过重而提供的一种换 Leader 的方案。在专栏后面说到工具的时候，我们再详谈 Preferred 领导者选举，这里你只需要了解这也是控制器的职责范围就可以了。</p>
+<p>4.<strong>集群成员管理（新增 Broker、Broker 主动关闭、Broker 宕机）</strong></p>
+<p>这是控制器提供的第 4 类功能，包括自动检测新增 Broker、Broker 主动关闭及被动宕机。这种自动检测是依赖于前面提到的 Watch 功能和 ZooKeeper 临时节点组合实现的。</p>
+<p>比如，控制器组件会利用<strong>Watch 机制</strong>检查 ZooKeeper 的 /brokers/ids 节点下的子节点数量变更。目前，当有新 Broker 启动后，它会在 /brokers 下创建专属的 znode 节点。一旦创建完毕，ZooKeeper 会通过 Watch 机制将消息通知推送给控制器，这样，控制器就能自动地感知到这个变化，进而开启后续的新增 Broker 作业。</p>
+<p>侦测 Broker 存活性则是依赖于刚刚提到的另一个机制：<strong>临时节点</strong>。每个 Broker 启动后，会在 /brokers/ids 下创建一个临时 znode。当 Broker 宕机或主动关闭后，该 Broker 与 ZooKeeper 的会话结束，这个 znode 会被自动删除。同理，ZooKeeper 的 Watch 机制将这一变更推送给控制器，这样控制器就能知道有 Broker 关闭或宕机了，从而进行“善后”。</p>
+<p>5.<strong>数据服务</strong></p>
+<p>控制器的最后一大类工作，就是向其他 Broker 提供数据服务。控制器上保存了最全的集群元数据信息，其他所有 Broker 会定期接收控制器发来的元数据更新请求，从而更新其内存中的缓存数据。</p>
+<h2 id="高水位的作用">
+  高水位的作用
+  <a class="anchor" href="#%e9%ab%98%e6%b0%b4%e4%bd%8d%e7%9a%84%e4%bd%9c%e7%94%a8">#</a>
+</h2>
+<p>在 Kafka 中，高水位的作用主要有 2 个。</p>
+<ol>
+<li>定义消息可见性，即用来标识分区下的哪些消息是可以被消费者消费的。</li>
+<li>帮助 Kafka 完成副本同步。</li>
+</ol>
+<p><strong>位移值等于高水位的消息也属于未提交消息。也就是说，高水位上的消息是不能被消费者消费的</strong>。</p>
+<p>图中还有一个日志末端位移的概念，即 Log End Offset，简写是 LEO</p>
+<p><strong>同一个副本对象，其高水位值不会大于 LEO 值</strong>。</p>
+<p>Leader 副本和 Follower 副本两个维度，来总结一下高水位和 LEO 的更新机制。</p>
+<p><strong>Leader 副本</strong></p>
+<p>处理生产者请求的逻辑如下：</p>
+<ol>
+<li>写入消息到本地磁盘。</li>
+<li>更新分区高水位值。
+i. 获取 Leader 副本所在 Broker 端保存的所有远程副本 LEO 值{LEO-1，LEO-2，……，LEO-n}。
+ii. 获取 Leader 副本高水位值：currentHW。
+iii. 更新 currentHW = min(currentHW, LEO-1，LEO-2，……，LEO-n)。</li>
+</ol>
+<p>处理 Follower 副本拉取消息的逻辑如下：</p>
+<ol>
+<li>读取磁盘（或页缓存）中的消息数据。</li>
+<li>使用 Follower 副本发送请求中的位移值更新远程副本 LEO 值。</li>
+<li>更新分区高水位值（具体步骤与处理生产者请求的步骤相同）。</li>
+</ol>
+<p><strong>Follower 副本</strong></p>
+<p>从 Leader 拉取消息的处理逻辑如下：</p>
+<ol>
+<li>写入消息到本地磁盘。</li>
+<li>更新 LEO 值。</li>
+<li>更新高水位值。
+i. 获取 Leader 发送的高水位值：currentHW。
+ii. 获取步骤 2 中更新过的 LEO 值：currentLEO。
+iii. 更新高水位为 min(currentHW, currentLEO)。</li>
+</ol>
+<p>leader epoch</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#isr">ISR</a></li>
+        <li><a href="#控制器">控制器</a></li>
+      </ul>
+    </li>
+    <li><a href="#高水位的作用">高水位的作用</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

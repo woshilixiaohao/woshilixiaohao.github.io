@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="创造型 #  单例 #  package singleton import ( &#34;sync&#34; ) type singleton struct { } var ins *singleton var once sync.Once func GetInsOr() *singleton { once.Do(func() { ins = &amp;singleton{} }) return ins } 使用sync.Once来创建单例
+工厂模式 #  简单工厂 #  type Person struct { Name string Age int } func (p Person) Greet() { fmt.Printf(&#34;Hi! My name is %s&#34;, p.Name) } func NewPerson(name string, age int) *Person { return &amp;Person{ Name: name, Age: age } } 抽象工厂 #  type Person interface { Greet() } type person struct { name string age int } func (p person) Greet() { fmt.">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
+<meta property="og:description" content="创造型 #  单例 #  package singleton import ( &#34;sync&#34; ) type singleton struct { } var ins *singleton var once sync.Once func GetInsOr() *singleton { once.Do(func() { ins = &amp;singleton{} }) return ins } 使用sync.Once来创建单例
+工厂模式 #  简单工厂 #  type Person struct { Name string Age int } func (p Person) Greet() { fmt.Printf(&#34;Hi! My name is %s&#34;, p.Name) } func NewPerson(name string, age int) *Person { return &amp;Person{ Name: name, Age: age } } 抽象工厂 #  type Person interface { Greet() } type person struct { name string age int } func (p person) Greet() { fmt." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" /><meta property="article:section" content="docs" />
+
+
+
+<title>Go常用设计模式 | 老三炮的笔记</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.55521e020be85709ff7a38b6c916ae95096e8bcaa216ac4aaaff69e27781036c.js" integrity="sha256-VVIeAgvoVwn/eji2yRaulQlui8qiFqxKqv9p4neBA2w=" crossorigin="anonymous"></script>
+
+  <script defer src="/sw.min.6f6f90fcb8eb1c49ec389838e6b801d0de19430b8e516902f8d75c3c8bd98739.js" integrity="sha256-b2&#43;Q/LjrHEnsOJg45rgB0N4ZQwuOUWkC&#43;NdcPIvZhzk=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>老三炮的笔记</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/" class="">Interview</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Redis面试题</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/" class="">Tech</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/" class="">Db</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/mysql/" class="">Mysql</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/" class="">Go</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="">Atomic包源码解析</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" class="">Golang内存分配</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class=" active">Go常用设计模式</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/" class="">Unsafe包</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/" class="">Java</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/" class="">Mq</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" class="">Kafka</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/" class="">Nosql</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/redis/" class="">Redis</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Go常用设计模式</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#创造型">创造型</a></li>
+        <li><a href="#结构型">结构型</a></li>
+        <li><a href="#行为">行为</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h3 id="创造型">
+  创造型
+  <a class="anchor" href="#%e5%88%9b%e9%80%a0%e5%9e%8b">#</a>
+</h3>
+<h4 id="单例">
+  单例
+  <a class="anchor" href="#%e5%8d%95%e4%be%8b">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">singleton</span>
+
+<span style="color:#f92672">import</span> (
+    <span style="color:#e6db74">&#34;sync&#34;</span>
+)
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">singleton</span> <span style="color:#66d9ef">struct</span> {
+}
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">ins</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">singleton</span>
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">once</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Once</span>
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">GetInsOr</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">singleton</span> {
+    <span style="color:#a6e22e">once</span>.<span style="color:#a6e22e">Do</span>(<span style="color:#66d9ef">func</span>() {
+        <span style="color:#a6e22e">ins</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">singleton</span>{}
+    })
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ins</span>
+}
+</code></pre></div><p>使用sync.Once来创建单例</p>
+<h4 id="工厂模式">
+  工厂模式
+  <a class="anchor" href="#%e5%b7%a5%e5%8e%82%e6%a8%a1%e5%bc%8f">#</a>
+</h4>
+<h5 id="简单工厂">
+  简单工厂
+  <a class="anchor" href="#%e7%ae%80%e5%8d%95%e5%b7%a5%e5%8e%82">#</a>
+</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Person</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">Name</span> <span style="color:#66d9ef">string</span>
+  <span style="color:#a6e22e">Age</span> <span style="color:#66d9ef">int</span>
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#a6e22e">Person</span>) <span style="color:#a6e22e">Greet</span>() {
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Hi! My name is %s&#34;</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">Name</span>)
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewPerson</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">Person</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Person</span>{
+    <span style="color:#a6e22e">Name</span>: <span style="color:#a6e22e">name</span>,
+    <span style="color:#a6e22e">Age</span>: <span style="color:#a6e22e">age</span>
+  }
+}
+</code></pre></div><h5 id="抽象工厂">
+  抽象工厂
+  <a class="anchor" href="#%e6%8a%bd%e8%b1%a1%e5%b7%a5%e5%8e%82">#</a>
+</h5>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Person</span> <span style="color:#66d9ef">interface</span> {
+  <span style="color:#a6e22e">Greet</span>()
+}
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">person</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>
+  <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#a6e22e">person</span>) <span style="color:#a6e22e">Greet</span>() {
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Hi! My name is %s&#34;</span>, <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">name</span>)
+}
+
+<span style="color:#75715e">// Here, NewPerson returns an interface, and not the person struct itself
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewPerson</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>) <span style="color:#a6e22e">Person</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">person</span>{
+    <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">name</span>,
+    <span style="color:#a6e22e">age</span>: <span style="color:#a6e22e">age</span>
+  }
+}
+</code></pre></div><p>它和简单工厂模式的唯一区别，就是它返回的是接口而不是结构体</p>
+<h5 id="工厂方法模式">
+  工厂方法模式
+  <a class="anchor" href="#%e5%b7%a5%e5%8e%82%e6%96%b9%e6%b3%95%e6%a8%a1%e5%bc%8f">#</a>
+</h5>
+<p>在简单工厂模式中，依赖于唯一的工厂对象，如果我们需要实例化一个产品，就要向工厂中传入一个参数，获取对应的对象；如果要增加一种产品，就要在工厂中修改创建产品的函数。这会导致耦合性过高，这时我们就可以使用工厂方法模式。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Person</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>
+  <span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewPersonFactory</span>(<span style="color:#a6e22e">age</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">Person</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>) <span style="color:#a6e22e">Person</span> {
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">Person</span>{
+      <span style="color:#a6e22e">name</span>: <span style="color:#a6e22e">name</span>,
+      <span style="color:#a6e22e">age</span>: <span style="color:#a6e22e">age</span>,
+    }
+  }
+}
+<span style="color:#75715e">// 创建具有默认年龄的工厂
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>(){
+    <span style="color:#a6e22e">newBaby</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewPersonFactory</span>(<span style="color:#ae81ff">1</span>)
+    <span style="color:#a6e22e">baby</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">newBaby</span>(<span style="color:#e6db74">&#34;john&#34;</span>)
+
+    <span style="color:#a6e22e">newTeenager</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewPersonFactory</span>(<span style="color:#ae81ff">16</span>)
+    <span style="color:#a6e22e">teen</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">newTeenager</span>(<span style="color:#e6db74">&#34;jill&#34;</span>)
+}
+</code></pre></div><h3 id="结构型">
+  结构型
+  <a class="anchor" href="#%e7%bb%93%e6%9e%84%e5%9e%8b">#</a>
+</h3>
+<h4 id="策略模式">
+  策略模式
+  <a class="anchor" href="#%e7%ad%96%e7%95%a5%e6%a8%a1%e5%bc%8f">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">package</span> <span style="color:#a6e22e">strategy</span>
+
+<span style="color:#75715e">// 策略模式
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// 定义一个策略类
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">IStrategy</span> <span style="color:#66d9ef">interface</span> {
+  <span style="color:#a6e22e">do</span>(<span style="color:#66d9ef">int</span>, <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span>
+}
+
+<span style="color:#75715e">// 策略实现：加
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">add</span> <span style="color:#66d9ef">struct</span>{}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">add</span>) <span style="color:#a6e22e">do</span>(<span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">b</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">b</span>
+}
+
+<span style="color:#75715e">// 策略实现：减
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">reduce</span> <span style="color:#66d9ef">struct</span>{}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">reduce</span>) <span style="color:#a6e22e">do</span>(<span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">b</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">a</span> <span style="color:#f92672">-</span> <span style="color:#a6e22e">b</span>
+}
+
+<span style="color:#75715e">// 具体策略的执行者
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Operator</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">strategy</span> <span style="color:#a6e22e">IStrategy</span>
+}
+
+<span style="color:#75715e">// 设置策略
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">operator</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Operator</span>) <span style="color:#a6e22e">setStrategy</span>(<span style="color:#a6e22e">strategy</span> <span style="color:#a6e22e">IStrategy</span>) {
+  <span style="color:#a6e22e">operator</span>.<span style="color:#a6e22e">strategy</span> = <span style="color:#a6e22e">strategy</span>
+}
+
+<span style="color:#75715e">// 调用策略中的方法
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">operator</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Operator</span>) <span style="color:#a6e22e">calculate</span>(<span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">b</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">operator</span>.<span style="color:#a6e22e">strategy</span>.<span style="color:#a6e22e">do</span>(<span style="color:#a6e22e">a</span>, <span style="color:#a6e22e">b</span>)
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestStrategy</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+  <span style="color:#a6e22e">operator</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">Operator</span>{}
+
+  <span style="color:#a6e22e">operator</span>.<span style="color:#a6e22e">setStrategy</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">add</span>{})
+  <span style="color:#a6e22e">result</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">operator</span>.<span style="color:#a6e22e">calculate</span>(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">2</span>)
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;add:&#34;</span>, <span style="color:#a6e22e">result</span>)
+
+  <span style="color:#a6e22e">operator</span>.<span style="color:#a6e22e">setStrategy</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">reduce</span>{})
+  <span style="color:#a6e22e">result</span> = <span style="color:#a6e22e">operator</span>.<span style="color:#a6e22e">calculate</span>(<span style="color:#ae81ff">2</span>, <span style="color:#ae81ff">1</span>)
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;reduce:&#34;</span>, <span style="color:#a6e22e">result</span>)
+}
+</code></pre></div><h4 id="模板方法">
+  模板方法
+  <a class="anchor" href="#%e6%a8%a1%e6%9d%bf%e6%96%b9%e6%b3%95">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">
+<span style="color:#f92672">package</span> <span style="color:#a6e22e">template</span>
+
+<span style="color:#f92672">import</span> <span style="color:#e6db74">&#34;fmt&#34;</span>
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Cooker</span> <span style="color:#66d9ef">interface</span> {
+  <span style="color:#a6e22e">fire</span>()
+  <span style="color:#a6e22e">cooke</span>()
+  <span style="color:#a6e22e">outfire</span>()
+}
+
+<span style="color:#75715e">// 类似于一个抽象类
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CookMenu</span> <span style="color:#66d9ef">struct</span> {
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">CookMenu</span>) <span style="color:#a6e22e">fire</span>() {
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;开火&#34;</span>)
+}
+
+<span style="color:#75715e">// 做菜，交给具体的子类实现
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">CookMenu</span>) <span style="color:#a6e22e">cooke</span>() {
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">CookMenu</span>) <span style="color:#a6e22e">outfire</span>() {
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;关火&#34;</span>)
+}
+
+<span style="color:#75715e">// 封装具体步骤
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">doCook</span>(<span style="color:#a6e22e">cook</span> <span style="color:#a6e22e">Cooker</span>) {
+  <span style="color:#a6e22e">cook</span>.<span style="color:#a6e22e">fire</span>()
+  <span style="color:#a6e22e">cook</span>.<span style="color:#a6e22e">cooke</span>()
+  <span style="color:#a6e22e">cook</span>.<span style="color:#a6e22e">outfire</span>()
+}
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">XiHongShi</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">CookMenu</span>
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">XiHongShi</span>) <span style="color:#a6e22e">cooke</span>() {
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;做西红柿&#34;</span>)
+}
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ChaoJiDan</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">CookMenu</span>
+}
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">ChaoJiDan</span>) <span style="color:#a6e22e">cooke</span>() {
+  <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;做炒鸡蛋&#34;</span>)
+}
+</code></pre></div><h3 id="行为">
+  行为
+  <a class="anchor" href="#%e8%a1%8c%e4%b8%ba">#</a>
+</h3>
+<h4 id="代理">
+  代理
+  <a class="anchor" href="#%e4%bb%a3%e7%90%86">#</a>
+</h4>
+<p>代理类与被代理类实现同一接口</p>
+<h4 id="选项模式">
+  选项模式
+  <a class="anchor" href="#%e9%80%89%e9%a1%b9%e6%a8%a1%e5%bc%8f">#</a>
+</h4>
+<p>一个可以创建带默认值的实例，一个可以定制化创建实例。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go">
+
+<span style="color:#f92672">package</span> <span style="color:#a6e22e">options</span>
+
+<span style="color:#f92672">import</span> (
+  <span style="color:#e6db74">&#34;time&#34;</span>
+)
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Connection</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">addr</span>    <span style="color:#66d9ef">string</span>
+  <span style="color:#a6e22e">cache</span>   <span style="color:#66d9ef">bool</span>
+  <span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+}
+
+<span style="color:#66d9ef">const</span> (
+  <span style="color:#a6e22e">defaultTimeout</span> = <span style="color:#ae81ff">10</span>
+  <span style="color:#a6e22e">defaultCaching</span> = <span style="color:#66d9ef">false</span>
+)
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">options</span> <span style="color:#66d9ef">struct</span> {
+  <span style="color:#a6e22e">timeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+  <span style="color:#a6e22e">caching</span> <span style="color:#66d9ef">bool</span>
+}
+
+<span style="color:#75715e">// Option overrides behavior of Connect.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Option</span> <span style="color:#66d9ef">interface</span> {
+  <span style="color:#a6e22e">apply</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>)
+}
+
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">optionFunc</span> <span style="color:#66d9ef">func</span>(<span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>)
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">optionFunc</span>) <span style="color:#a6e22e">apply</span>(<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>) {
+  <span style="color:#a6e22e">f</span>(<span style="color:#a6e22e">o</span>)
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithTimeout</span>(<span style="color:#a6e22e">t</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) <span style="color:#a6e22e">Option</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">optionFunc</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>) {
+    <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">timeout</span> = <span style="color:#a6e22e">t</span>
+  })
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">WithCaching</span>(<span style="color:#a6e22e">cache</span> <span style="color:#66d9ef">bool</span>) <span style="color:#a6e22e">Option</span> {
+  <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">optionFunc</span>(<span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">o</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>) {
+    <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">caching</span> = <span style="color:#a6e22e">cache</span>
+  })
+}
+
+<span style="color:#75715e">// Connect creates a connection.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Connect</span>(<span style="color:#a6e22e">addr</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">opts</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">Option</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">Connection</span>, <span style="color:#66d9ef">error</span>) {
+  <span style="color:#a6e22e">options</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">options</span>{
+    <span style="color:#a6e22e">timeout</span>: <span style="color:#a6e22e">defaultTimeout</span>,
+    <span style="color:#a6e22e">caching</span>: <span style="color:#a6e22e">defaultCaching</span>,
+  }
+
+  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">o</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">opts</span> {
+    <span style="color:#a6e22e">o</span>.<span style="color:#a6e22e">apply</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">options</span>)
+  }
+
+  <span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Connection</span>{
+    <span style="color:#a6e22e">addr</span>:    <span style="color:#a6e22e">addr</span>,
+    <span style="color:#a6e22e">cache</span>:   <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">caching</span>,
+    <span style="color:#a6e22e">timeout</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">timeout</span>,
+  }, <span style="color:#66d9ef">nil</span>
+}
+</code></pre></div></article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#创造型">创造型</a></li>
+        <li><a href="#结构型">结构型</a></li>
+        <li><a href="#行为">行为</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

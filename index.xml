@@ -8,6 +8,119 @@
     <language>en-us</language><atom:link href="https://woshilixiaohao.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title></title>
+      <link>https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/</guid>
+      <description>1、全局锁使用场景？mysqldump。set global readonly=true
+2、表锁、MDL、如何安全地给小表加字段
+3、行锁，减小锁冲突，死锁和死锁检测</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/</guid>
+      <description>题目 #   用什么数据结构保存键值对 rehash过程 集合底层数据结构 IO多路复用 AOF保存数据，写回策略三种，AOF重写 RDB，save/bgsave，Copy on write，AOF+RDB 主从，第一次，全量复制、长连接复制、增量复制 哨兵、3个任务，监控、选主、通知 哨兵选主，筛选+打分 哨兵集群组成 pub/sub，主库、从库都怎么获取信息，哨兵怎么知道对方，哨兵怎么知道从库 由哪个哨兵执行主从切换 String占用内存大的坑，压缩列表方式 GEO能用来做什么 聚合统计、排序、二值、基数，分别用什么数据类型 Redis基本对象结构 Redis保存时间序列数据2种方式 redis消息队列有哪些 redis单线程模型阻塞点有哪些、哪些可以异步、每个阻塞点解决方案 cpu对redis影响，多核、多CPU的NUMA 判断redis变慢的方法 redis慢查询、过期key  获取Redis实例在当前环境下的基线性能。 是否用了慢查询命令？如果是的话，就使用其他命令替代慢查询命令，或者把聚合计算命令放在客?端 做。 是否对过期key设置了相同的过期时间？对于批量删除的key，可以在每个key的过期时间上加一个随机 数，避免同时删除。 是否存在bigkey？ 对于bigkey的删除操作，如果你的Redis是4.0及以上的版本，可以直接利用异步线程 机制减少主线程阻塞；如果是Redis 4.0以前的版本，可以使用SCAN命令迭代删除；对于bigkey的集合查 询和聚合操作，可以使用SCAN命令在客户端完成。 Redis AOF配置级别是什么？业务层?是否的确需要这一可靠性级别？如果我们需要高性能，同时也允许 数据丢失，可以将配置项no-appendfsync-on-rewrite设置为yes，避免AOF重写和fsync竞争磁盘IO资 源，导致Redis延迟增加。当然， 如果既需要高性能又需要高可靠性，最好使用速固态盘作为AOF日志 的写入盘。 Redis实例的内存使用是否过大？发生swap了吗？如果是的话，就增加机器内存，或者是使用Redis集 群，分摊单机Redis的键值对数量和内存压力。同时，要避免出现Redis和其他内存需求大的应用共享机 器的情况。 在Redis实例的运行环境中，是否启用了透明大页机制？如果是的话，直接关闭内存大页机制就行了。 是否运行了Redis主从集群？如果是的话，把主库实例的数据量大小控制在2~4GB，以免主从复制时，从 库因加载大的RDB文件而阻塞。 是否使用了多核CPU或NUMA架构的机器运行Redis实例？使用多核CPU时，可以给Redis实例绑定物理 核；使用NUMA架构时，注意把Redis实例和网络中断处理程序运行在同一个CPU Socket上。   redis内存效率 三个一 ，INFO、碎片率阈值、内存碎片自动清理 缓冲区溢出会导致结果？输入缓冲区溢出、输出缓冲区溢出解决方案？数据发送过快过大，数据处理慢、缓冲区小 缓存类型？只读缓存、读写缓存。缓存建议容量？缓存淘汰策略，3类，8种。LRU的redis实现，第一次，第二次 冷热数据区分、没有冷热数据区分、有置顶数据的，用什么策略好 缓存一致性，先更库再删redis，先删redis再更库 缓存雪崩、击穿、穿透 缓存污染、LRU LRF Redis原子操作？ 分布式锁 ACID 主从故障：主从数据不一致，读取过期数据，不合理配置项 脑裂原因、配置参数 秒杀 数据量倾斜，数据访问倾斜  </description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/db/mysql/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/db/mysql/</guid>
+      <description>Mysql架构 #  MySQL可以分为Server层和存储引擎层两部分。
+Server层包括连接器、查询缓存、分析器、优化器、执行器等，涵盖MySQL的大多数核心服务功能，以及所有的内置函数（如日期、时间、数学和加密函数等），所有跨存储引擎的功能都在这一层实现，比如存储过程、触发器、视图等。
+而存储引擎层负责数据的存储和提取。其架构模式是插件式的，支持InnoDB、MyISAM、Memory等多个存储引擎。现在最常用的存储引擎是InnoDB，它从MySQL 5.5.5版本开始成为了默认存储引擎。
+ redo log（重做日志）和 binlog（归档日志） #   redo log是InnoDB引擎特有的；binlog是MySQL的Server层实现的，所有引擎都可以使用。 redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑，比如“给ID=2这一行的c字段加1 ”。 redo log是循环写的，空间固定会用完；binlog是可以追加写入的。“追加写”是指binlog文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。  redo log用于保证crash-safe能力。innodb_flush_log_at_trx_commit这个参数设置成1的时候，表示每次事务的redo log都直接持久化到磁盘。这个参数我建议你设置成1，这样可以保证MySQL异常重启之后数据不丢失。
+sync_binlog这个参数设置成1的时候，表示每次事务的binlog都持久化到磁盘。这个参数我也建议你设置成1，这样可以保证MySQL异常重启之后binlog不丢失。
+ 事务隔离级别 #   读未提交是指，一个事务还没提交时，它做的变更就能被别的事务看到。 读提交是指，一个事务提交之后，它做的变更才会被其他事务看到。 可重复读是指，一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。当然在可重复读隔离级别下，未提交变更对其他事务也是不可见的。 串行化，顾名思义是对于同一行记录，“写”会加“写锁”，“读”会加“读锁”。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。   多路查找树N #  这个N差不多是1200。这棵树高是4的时候，就可以存1200的3次方个值，这已经17亿了。考虑到树根的数据块总是在内存中的，一个10亿行的表上一个整数字段的索引，查找一个值最多只需要访问3次磁盘。其实，树的第二层也有很大概率在内存中，那么访问磁盘的平均次数就更少了。
+ 索引 #  innodb #  根据叶子节点的内容，索引类型分为主键索引和非主键索引。
+主键索引的叶子节点存的是整行数据。在InnoDB里，主键索引也被称为聚簇索引（clustered index）。
+非主键索引的叶子节点内容是主键的值。在InnoDB里，非主键索引也被称为二级索引（secondary index）。
+基于主键索引和普通索引的查询有什么区别？
+ 如果语句是select * from T where ID=500，即主键查询方式，则只需要搜索ID这棵B+树； 如果语句是select * from T where k=5，即普通索引查询方式，则需要先搜索k索引树，得到ID的值为500，再到ID索引树搜索一次。这个过程称为回表。  基于非主键索引的查询需要多扫描一棵索引树。
+主键长度越小，普通索引的叶子节点就越小，普通索引占用的空间也就越小。</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/</guid>
+      <description>go语言中如何进行原子操作 #  在Go语言标准库中，sync/atomic包将底层硬件提供的原子操作封装成了Go的函数，主要分为5个系列的函数，分别是：
+ func SwapXXXX(addr *int32, new int32) (old int32)系列：其实就是原子性的将new值保存到*addr并返回旧值。代码表示：  old = *addr *addr = new return old  func CompareAndSwapXXXX((addr *int64, old, new int64) (swapped bool)系列：其就是原子性的比较*addr和old的值，如果相同则将new赋值给*addr并返回真，代码表示：  if *addr == old{ *addr = new return ture } return false  func AddXXXX(addr *int64, delta int64) (new int64)系列：原子性的将val的值添加到*addr并返回新值。代码表示：  *addr += delta return *addr  func LoadXXXX(addr *uint32) (val uint32)系列：原子性的获取*addr的值 func StoreXXXX(addr *int32, val int32)原子性的将val值保存到*addr  Go语言在1.4版本时添加一个新的类型Value，此类型的值就相当于一个容器，可以被用来&amp;quot;原子地&amp;quot;存储(store)和加载(Load)任意类型的值。这些使用起来都还比较简单，就不写例子了，接下来我们一起看一看这些方法是如何实现的。</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/</guid>
+      <description>mspan #  mspan是一个包含起始地址、mspan规格、页的数量等内容的双端链表。
+小对象分配 #  当对一个小对象（&amp;lt;32KB）分配内存时，会将该对象所需的内存大小调整到某个能够容纳该对象的大小等级（size class）， 并查看 mcache 中对应等级的 mspan，通过扫描 mspan 的 freeindex 来确定是否能够进行分配。
+当没有可分配的 mspan 时，会从 mcentral 中获取一个所需大小空间的新的 mspan，从 mcentral 中分配会对其进行加锁， 但一次性获取整个 span 的过程均摊了对 mcentral 加锁的成本。
+如果 mcentral 的 mspan 也为空时，则它也会发生增长，从而从 mheap 中获取一连串的页，作为一个新的 mspan 进行提供。 而如果 mheap 仍然为空，或者没有足够大的对象来进行分配时，则会从操作系统中分配一组新的页（至少 1MB）， 从而均摊与操作系统沟通的成本。
+微对象分配 #  对于过小的微对象（&amp;lt;16B），它们的分配过程与小对象的分配过程基本类似，但是是直接存储在 mcache 上，并由其以 16B 的块大小直接进行管理和释放。
+大对象分配 #  大对象分配非常粗暴，不与 mcache 和 mcentral 沟通，直接绕过并通过 mheap 进行分配。
+Go的内存分配器在分配对象时，根据对象的大小，分成三类：小对象（小于等于16B）、一般对象（大于16B，小于等于32KB）、大对象（大于32KB）。
+大体上的分配流程：
+  32KB 的对象，直接从mheap上分配；
+  &amp;lt;=16B 的对象使用mcache的tiny分配器分配；</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/</guid>
+      <description>创造型 #  单例 #  package singleton import ( &amp;#34;sync&amp;#34; ) type singleton struct { } var ins *singleton var once sync.Once func GetInsOr() *singleton { once.Do(func() { ins = &amp;amp;singleton{} }) return ins } 使用sync.Once来创建单例
+工厂模式 #  简单工厂 #  type Person struct { Name string Age int } func (p Person) Greet() { fmt.Printf(&amp;#34;Hi! My name is %s&amp;#34;, p.Name) } func NewPerson(name string, age int) *Person { return &amp;amp;Person{ Name: name, Age: age } } 抽象工厂 #  type Person interface { Greet() } type person struct { name string age int } func (p person) Greet() { fmt.</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/</guid>
+      <description>什么是unsafe #  众所周知，Go语言被设计成一门强类型的静态语言，那么他的类型就不能改变了，静态也是意味着类型检查在运行前就做了。所以在Go语言中是不允许两个指针类型进行转换的，使用过C语言的朋友应该知道这在C语言中是可以实现的，Go中不允许这么使用是处于安全考虑，毕竟强制转型会引起各种各样的麻烦，有时这些麻烦很容易被察觉，有时他们却又隐藏极深，难以察觉。大多数读者可能不明白为什么类型转换是不安全的，这里用C语言举一个简单的例子：
+int main(){ double pi = 3.1415926; double *pv = &amp;amp;pi; void *temp = pd; int *p = temp; } 在标准C语言中，任何非void类型的指针都可以和void类型的指针相互指派，也可以通过void类型指针作为中介，实现不同类型的指针间接相互转换。上面示例中，指针pv指向的空间本是一个双精度数据，占8个字节，但是经过转换后，p指向的是一个4字节的int类型。这种发生内存截断的设计缺陷会在转换后进行内存访问是存在安全隐患。我想这就是Go语言被设计成强类型语言的原因之一吧。
+虽然类型转换是不安全的，但是在一些特殊场景下，使用了它，可以打破Go的类型和内存安全机制，可以绕过类型系统低效，提高运行效率。所以Go标准库中提供了一个unsafe包，之所以叫这个名字，就是不推荐大家使用，但是不是不能用，如果你掌握的特别好，还是可以实践的。
+unsafe 实现原理 #  在使用之前我们先来看一下unsafe的源码部分，标准库unsafe包中只提供了3``种方法，分别是:
+func Sizeof(x ArbitraryType) uintptr func Offsetof(x ArbitraryType) uintptr func Alignof(x ArbitraryType) uintptr  Sizeof(x ArbitrayType)方法主要作用是用返回类型x所占据的字节数，但并不包含x所指向的内容的大小，与C语言标准库中的Sizeof()方法功能一样，比如在32位机器上，一个指针返回大小就是4字节。 Offsetof(x ArbitraryType)方法主要作用是返回结构体成员在内存中的位置离结构体起始处(结构体的第一个字段的偏移量都是0)的字节数，即偏移量，我们在注释中看一看到其入参必须是一个结构体，其返回值是一个常量。 Alignof(x ArbitratyType)的主要作用是返回一个类型的对齐值，也可以叫做对齐系数或者对齐倍数。对齐值是一个和内存对齐有关的值，合理的内存对齐可以提高内存读写的性能。一般对齐值是2^n，最大不会超过8(受内存对齐影响).获取对齐值还可以使用反射包的函数，也就是说：unsafe.Alignof(x)等价于reflect.TypeOf(x).Align()。对于任意类型的变量x，unsafe.Alignof(x)至少为1。对于struct结构体类型的变量x，计算x每一个字段f的unsafe.Alignof(x，f)，unsafe.Alignof(x)等于其中的最大值。对于array数组类型的变量x，unsafe.Alignof(x)等于构成数组的元素类型的对齐倍数。没有任何字段的空struct{}和没有任何元素的array占据的内存空间大小为0，不同大小为0的变量可能指向同一块地址。  细心的朋友会发发现这三个方法返回的都是uintptr类型，这个目的就是可以和unsafe.poniter类型相互转换，因为*T是不能计算偏移量的，也不能进行计算，但是uintptr是可以的，所以可以使用uintptr类型进行计算，这样就可以可以访问特定的内存了，达到对不同的内存读写的目的。三个方法的入参都是ArbitraryType类型，代表着任意类型的意思，同时还提供了一个Pointer指针类型，即像void *一样的通用型指针。
+type ArbitraryType int type Pointer *ArbitraryType // uintptr 是一个整数类型，它足够大，可以存储 type uintptr uintptr 上面说了这么多，可能会有点懵，在这里对三种指针类型做一个总结：
+ *T：普通类型指针类型，用于传递对象地址，不能进行指针运算。 unsafe.poniter：通用指针类型，用于转换不同类型的指针，不能进行指针运算，不能读取内存存储的值(需转换到某一类型的普通指针) uintptr：用于指针运算，GC不把uintptr当指针，uintptr无法持有对象。uintptr类型的目标会被回收。  三者关系就是：unsafe.</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/java/java-test/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/java/java-test/</guid>
+      <description>mock接口或者抽象类 #  引入jar包 #  import 类 #  import static org.assertj.core.api.Assertions.assertThat; import static org.mockito.Matchers.any; import static org.mockito.Matchers.eq; import static org.mockito.Mockito.mock; import static org.mockito.Mockito.when; private PaasRepository repository = mock(PaasRepository.class); mock静态方法 #  PowerMockito.mockStatic(EnvUtil.class); when(EnvUtil.getTenantId()).thenReturn(&amp;#34;oki&amp;#34;); mock静态变量 #  import org.powermock.reflect.Whitebox;Whitebox.setInternalState(NiaPatchService.class, &amp;quot;instance&amp;quot;, (NiaPatchService) null);</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://woshilixiaohao.github.io/docs/tech/mq/kafka/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://woshilixiaohao.github.io/docs/tech/mq/kafka/</guid>
+      <description>partition 并行处理 顺序写磁盘，充分利用磁盘特性 利用了现代操作系统分页存储 Page Cache 来利用内存提高 I/O 效率 采用了零拷贝技术 Producer 生产的数据持久化到 broker，采用 mmap 文件映射，实现顺序的快速写入 Customer 从 broker 读取数据，采用 sendfile，将磁盘文件读到 OS 内核缓冲区后，转到 NIO buffer 进行网络发送，减少 CPU 消耗
+消息不丢配置
+ 不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。记住，一定要使用带有回调通知的 send 方法。 设置 acks = all。acks 是 Producer 的一个参数，代表了你对“已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是“已提交”。这是最高等级的“已提交”定义。 设置 retries 为一个较大的值。这里的 retries 同样是 Producer 的参数，对应前面提到的 Producer 自动重试。当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &amp;gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。 设置 unclean.leader.election.enable = false。这是 Broker 端的参数，它控制的是哪些 Broker 有资格竞选分区的 Leader。如果一个 Broker 落后原先的 Leader 太多，那么它一旦成为新的 Leader，必然会造成消息的丢失。故一般都要将该参数设置成 false，即不允许这种情况的发生。 设置 replication.</description>
+    </item>
+    
+    <item>
+      <title></title>
       <link>https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
@@ -21,7 +134,23 @@
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://woshilixiaohao.github.io/docs/tech/nosql/redis/</guid>
-      <description>缓存数据库 redis #  </description>
+      <description>键值对 #  redis用哈希表来保存所有键值对
+rehash也就是增加现有的哈希桶数量，让逐渐增多的entry元素能 在更多的桶之间分散保存，减少单个桶中的元素数量，从⽽减少单个桶中的冲突。
+ 给哈希表2分配更⼤的空间，例如是当前哈希表1⼤⼩的两倍； 把哈希表1中的数据重新映射并拷⻉到哈希表2中； 释放哈希表1的空间。  采用渐进式rehash
+在第⼆步拷⻉数据时，Redis仍然正常处理客⼾端请求，每处理⼀个请求时，从哈希表1中的第 ⼀个索引位置开始，顺带着将这个索引位置上的所有entries拷⻉到哈希表2中；等处理下⼀个请求时，再顺 带拷⻉哈希表1中的下⼀个索引位置的entries。
+集合类型的底层数据结构主要有5种：整数数组、双向链表、哈希表、压缩列表和 跳表。
+redis都在内存中操作，有哈希表，跳表数据结构，单线程用多路复⽤的⾼性能I/O模型，select/epoll
+Redis只运⾏单线程的情况下，该机制允许内核中，同时存在多个监听套接字（listen）和已连接套接字(accept)
+ AOF #  AOF⾥记录的是Redis收到的 每⼀条命令，这些命令是以⽂本形式保存的。
+AOF还有⼀个好处：它是在命令执⾏后才记录⽇志，所以不会阻塞当前的写操作
+AOF写回 #   Always，同步写回：每个写命令执⾏完，⽴⻢同步地将⽇志写回磁盘；(影响性能) Everysec，每秒写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，每隔⼀秒把缓冲 区中的内容写⼊磁盘； No，操作系统控制的写回：每个写命令执⾏完，只是先把⽇志写到AOF⽂件的内存缓冲区，由操作系统 决定何时将缓冲区内容写回磁盘。  AOF重写 #  AOF⽂件是以追加的⽅式，逐⼀记录接收到的写命令的。当⼀个键值对被多条写命令反复修改 时，AOF⽂件会记录相应的多条命令。但是，在重写的时候，是根据这个键值对当前的最新状态，为它⽣成 对应的写⼊命令。这样⼀来，⼀个键值对在重写⽇志中只⽤⼀条命令就⾏了
+重写过程是由后台线程bgrewriteaof来完成的，这也是为了避免阻塞主线 程，导致数据库性能下降。
+⼀个拷⻉，两处⽇志
+fork会把主线程 的内存拷⻉⼀份给bgrewriteaof⼦进程
+第⼀处⽇志就是指正在使⽤的AOF⽇ 志，Redis会把这个操作写到它的缓冲区。第⼆处⽇志，就是指新的AOF重写⽇志
+ RDB #  Redis提供了两个命令来⽣成RDB⽂件，分别是save和bgsave。
+ save：在主线程中执⾏，会导致阻塞； bgsave：创建⼀个⼦进程，专⻔⽤于写⼊RDB⽂件，避免了主线程的阻塞，这也是Redis RDB⽂件⽣成的 默认配置。  Redis 4.0中提出了⼀个混合使⽤AOF⽇志和内存快照的⽅法。简单来说，内存快照以⼀定的频率执⾏，在两 次快照之间，使⽤AOF⽇志记录这期间的所有命令操作，T1和T2时刻的修改，⽤AOF⽇志记录，等到第⼆次做全量快照时，就可以清空AOF⽇志，因为 此时的修改都已经记录到快照中了，恢复时就不再⽤⽇志了。
+ 数据不能丢失时，内存快照和AOF的混合使⽤是⼀个很好的选择； 如果允许分钟级别的数据丢失，可以只使⽤RDB； 如果只⽤AOF，优先使⽤everysec的配置选项，因为它在可靠性和性能之间取了⼀个平衡   Linux中CopyOnWrite实现原理 fork()之后，kernel把父进程中所有的内存页的权限都设为read-only，然后子进程的地址空间指向父进程。当父子进程都只读内存时，相安无事。当其中某个进程写内存时，CPU硬件检测到内存页是read-only的，于是触发页异常中断（page-fault），陷入kernel的一个中断例程。中断例程中，kernel就会把触发的异常的页复制一份，于是父子进程各自持有独立的一份。</description>
     </item>
     
   </channel>

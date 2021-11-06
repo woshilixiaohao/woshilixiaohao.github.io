@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="go语言中如何进行原子操作 #  在Go语言标准库中，sync/atomic包将底层硬件提供的原子操作封装成了Go的函数，主要分为5个系列的函数，分别是：
+ func SwapXXXX(addr *int32, new int32) (old int32)系列：其实就是原子性的将new值保存到*addr并返回旧值。代码表示：  old = *addr *addr = new return old  func CompareAndSwapXXXX((addr *int64, old, new int64) (swapped bool)系列：其就是原子性的比较*addr和old的值，如果相同则将new赋值给*addr并返回真，代码表示：  if *addr == old{ *addr = new return ture } return false  func AddXXXX(addr *int64, delta int64) (new int64)系列：原子性的将val的值添加到*addr并返回新值。代码表示：  *addr &#43;= delta return *addr  func LoadXXXX(addr *uint32) (val uint32)系列：原子性的获取*addr的值 func StoreXXXX(addr *int32, val int32)原子性的将val值保存到*addr  Go语言在1.4版本时添加一个新的类型Value，此类型的值就相当于一个容器，可以被用来&quot;原子地&quot;存储(store)和加载(Load)任意类型的值。这些使用起来都还比较简单，就不写例子了，接下来我们一起看一看这些方法是如何实现的。">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
+<meta property="og:description" content="go语言中如何进行原子操作 #  在Go语言标准库中，sync/atomic包将底层硬件提供的原子操作封装成了Go的函数，主要分为5个系列的函数，分别是：
+ func SwapXXXX(addr *int32, new int32) (old int32)系列：其实就是原子性的将new值保存到*addr并返回旧值。代码表示：  old = *addr *addr = new return old  func CompareAndSwapXXXX((addr *int64, old, new int64) (swapped bool)系列：其就是原子性的比较*addr和old的值，如果相同则将new赋值给*addr并返回真，代码表示：  if *addr == old{ *addr = new return ture } return false  func AddXXXX(addr *int64, delta int64) (new int64)系列：原子性的将val的值添加到*addr并返回新值。代码表示：  *addr &#43;= delta return *addr  func LoadXXXX(addr *uint32) (val uint32)系列：原子性的获取*addr的值 func StoreXXXX(addr *int32, val int32)原子性的将val值保存到*addr  Go语言在1.4版本时添加一个新的类型Value，此类型的值就相当于一个容器，可以被用来&quot;原子地&quot;存储(store)和加载(Load)任意类型的值。这些使用起来都还比较简单，就不写例子了，接下来我们一起看一看这些方法是如何实现的。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" /><meta property="article:section" content="docs" />
+
+
+
+<title>Atomic包源码解析 | 老三炮的笔记</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.55521e020be85709ff7a38b6c916ae95096e8bcaa216ac4aaaff69e27781036c.js" integrity="sha256-VVIeAgvoVwn/eji2yRaulQlui8qiFqxKqv9p4neBA2w=" crossorigin="anonymous"></script>
+
+  <script defer src="/sw.min.6f6f90fcb8eb1c49ec389838e6b801d0de19430b8e516902f8d75c3c8bd98739.js" integrity="sha256-b2&#43;Q/LjrHEnsOJg45rgB0N4ZQwuOUWkC&#43;NdcPIvZhzk=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>老三炮的笔记</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/" class="">Interview</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Redis面试题</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/" class="">Tech</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/" class="">Db</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/mysql/" class="">Mysql</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/" class="">Go</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class=" active">Atomic包源码解析</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" class="">Golang内存分配</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="">Go常用设计模式</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/" class="">Unsafe包</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/" class="">Java</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/" class="">Mq</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" class="">Kafka</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/" class="">Nosql</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/redis/" class="">Redis</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Atomic包源码解析</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#go语言中如何进行原子操作">go语言中如何进行原子操作</a></li>
+    <li><a href="#源码解析">源码解析</a>
+      <ul>
+        <li><a href="#value结构"><code>Value</code>结构</a></li>
+        <li><a href="#value的写入操作"><code>Value</code>的写入操作</a></li>
+        <li><a href="#value的读操作"><code>Value</code>的读操作</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="go语言中如何进行原子操作">
+  go语言中如何进行原子操作
+  <a class="anchor" href="#go%e8%af%ad%e8%a8%80%e4%b8%ad%e5%a6%82%e4%bd%95%e8%bf%9b%e8%a1%8c%e5%8e%9f%e5%ad%90%e6%93%8d%e4%bd%9c">#</a>
+</h2>
+<p>在<code>Go</code>语言标准库中，<code>sync/atomic</code>包将底层硬件提供的原子操作封装成了<code>Go</code>的函数，主要分为5个系列的函数，分别是：</p>
+<ul>
+<li>func SwapXXXX(addr *int32, new int32) (old int32)系列：其实就是原子性的将<code>new</code>值保存到<code>*addr</code>并返回旧值。代码表示：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">old</span> = <span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span>
+<span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span> = <span style="color:#a6e22e">new</span>
+<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">old</span>
+</code></pre></div><ul>
+<li>func CompareAndSwapXXXX((addr *int64, old, new int64) (swapped bool)系列：其就是原子性的比较<code>*addr</code>和old的值，如果相同则将<code>new</code>赋值给<code>*addr</code>并返回真，代码表示：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">old</span>{
+    <span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span> = <span style="color:#a6e22e">new</span>
+    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ture</span>
+}
+<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">false</span>
+</code></pre></div><ul>
+<li>func AddXXXX(addr *int64, delta int64) (new int64)系列：原子性的将<code>val</code>的值添加到<code>*addr</code>并返回新值。代码表示：</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">delta</span>
+<span style="color:#66d9ef">return</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">addr</span>
+</code></pre></div><ul>
+<li>func LoadXXXX(addr *uint32) (val uint32)系列：原子性的获取<code>*addr</code>的值</li>
+<li>func StoreXXXX(addr *int32, val int32)原子性的将val值保存到<code>*addr</code></li>
+</ul>
+<p><code>Go</code>语言在<code>1.4</code>版本时添加一个新的类型<code>Value</code>，此类型的值就相当于一个容器，可以被用来&quot;原子地&quot;存储(store)和加载(Load)任意类型的值。这些使用起来都还比较简单，就不写例子了，接下来我们一起看一看这些方法是如何实现的。</p>
+<h2 id="源码解析">
+  源码解析
+  <a class="anchor" href="#%e6%ba%90%e7%a0%81%e8%a7%a3%e6%9e%90">#</a>
+</h2>
+<p>由于系列比较多。底层实现的方法也大同小异，这里就主要分析一下<code>Value</code>的实现方法吧。为什么不分析其他系列的呢？因为原子操作由底层硬件支持，所以看其他系列实现都要看汇编，Go的汇编是基于<code>Plan9</code>的，这个汇编语言真的资料甚少，我也是真的不懂，水平不够，也不自讨苦吃了，等后面真的能看懂这些汇编了，再来分析吧。这个网站有一些关于<code>plan9</code>汇编的知识，有兴趣可以看一看：http://doc.cat-v.org/plan_9/4th_edition/papers/asm。</p>
+<h3 id="value结构">
+  <code>Value</code>结构
+  <a class="anchor" href="#value%e7%bb%93%e6%9e%84">#</a>
+</h3>
+<p>我们先来看一下<code>Value</code>的结构：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Value</span> <span style="color:#66d9ef">struct</span> {
+ <span style="color:#a6e22e">v</span> <span style="color:#66d9ef">interface</span>{}
+}
+</code></pre></div><p><code>Value</code>结构里就只有一个字段，是interface类型，虽然这里是<code>interface</code>类型，但是这里要注意，第一次<code>Store</code>写入的类型就确定了之后写入的类型，否则会发生<code>panic</code>。因为这里是<code>interface</code>类型，所以为了之后写入与读取操作方便，又在这个包里定义了一个<code>ifaceWords</code>结构，其实他就是一个空<code>interface</code>，他的作用就是将<code>interface</code>分解成类型和数值。结构如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// ifaceWords is interface{} internal representation.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ifaceWords</span> <span style="color:#66d9ef">struct</span> {
+ <span style="color:#a6e22e">typ</span>  <span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>
+ <span style="color:#a6e22e">data</span> <span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>
+}
+</code></pre></div><h3 id="value的写入操作">
+  <code>Value</code>的写入操作
+  <a class="anchor" href="#value%e7%9a%84%e5%86%99%e5%85%a5%e6%93%8d%e4%bd%9c">#</a>
+</h3>
+<p>我们一起来看一看他是如何实现写入操作的：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Store sets the value of the Value to x.
+</span><span style="color:#75715e">// All calls to Store for a given Value must use values of the same concrete type.
+</span><span style="color:#75715e">// Store of an inconsistent type panics, as does Store(nil).
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">v</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Value</span>) <span style="color:#a6e22e">Store</span>(<span style="color:#a6e22e">x</span> <span style="color:#66d9ef">interface</span>{}) {
+ <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">x</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+  panic(<span style="color:#e6db74">&#34;sync/atomic: store of nil value into Value&#34;</span>)
+ }
+ <span style="color:#a6e22e">vp</span> <span style="color:#f92672">:=</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">ifaceWords</span>)(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#a6e22e">v</span>))
+ <span style="color:#a6e22e">xp</span> <span style="color:#f92672">:=</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">ifaceWords</span>)(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">x</span>))
+ <span style="color:#66d9ef">for</span> {
+  <span style="color:#a6e22e">typ</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">LoadPointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">typ</span>)
+  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">typ</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> { <span style="color:#75715e">// 第一次进入没有初始时，先初始化类型
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// Attempt to start first store.
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// Disable preemption so that other goroutines can use
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// active spin wait to wait for completion; and so that
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// GC does not see the fake type accidentally.
+</span><span style="color:#75715e"></span>   <span style="color:#a6e22e">runtime_procPin</span>()
+   <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">CompareAndSwapPointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">typ</span>, <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(^uintptr(<span style="color:#ae81ff">0</span>))) { <span style="color:#75715e">//使用初始值，用来等待第一次赋值类型结束
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">runtime_procUnpin</span>()
+    <span style="color:#66d9ef">continue</span>
+   }
+   <span style="color:#75715e">// Complete first store.
+</span><span style="color:#75715e"></span>   <span style="color:#a6e22e">StorePointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">xp</span>.<span style="color:#a6e22e">data</span>) <span style="color:#75715e">// 先赋值数据
+</span><span style="color:#75715e"></span>   <span style="color:#a6e22e">StorePointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">typ</span>, <span style="color:#a6e22e">xp</span>.<span style="color:#a6e22e">typ</span>) <span style="color:#75715e">// 再赋值类型，就是为了下面方法防止第一次赋值未结束就又赋值
+</span><span style="color:#75715e"></span>   <span style="color:#a6e22e">runtime_procUnpin</span>()
+   <span style="color:#66d9ef">return</span>
+  }
+  <span style="color:#66d9ef">if</span> uintptr(<span style="color:#a6e22e">typ</span>) <span style="color:#f92672">==</span> ^uintptr(<span style="color:#ae81ff">0</span>) { <span style="color:#75715e">// 如果类型是中间值，说明初始化没结束，等待第一次结束
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// First store in progress. Wait.
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// Since we disable preemption around the first store,
+</span><span style="color:#75715e"></span>   <span style="color:#75715e">// we can wait with active spinning.
+</span><span style="color:#75715e"></span>   <span style="color:#66d9ef">continue</span>
+  }
+  <span style="color:#75715e">// First store completed. Check type and overwrite data.
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">typ</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">xp</span>.<span style="color:#a6e22e">typ</span> {
+   panic(<span style="color:#e6db74">&#34;sync/atomic: store of inconsistently typed value into Value&#34;</span>)
+  }
+  <span style="color:#a6e22e">StorePointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">data</span>, <span style="color:#a6e22e">xp</span>.<span style="color:#a6e22e">data</span>)
+  <span style="color:#66d9ef">return</span>
+ }
+}
+
+<span style="color:#75715e">// Disable/enable preemption, implemented in runtime.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">runtime_procPin</span>()
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">runtime_procUnpin</span>()
+</code></pre></div><p>这段代码中的注释集已经告诉了我们，调用<code>Store</code>方法写入的类型必须与原类型相同，不一致便会发生panic。接下来分析代码实现：</p>
+<ol>
+<li>首先判断条件写入参数不能为<code>nil</code>，否则触发<code>panic</code></li>
+<li>通过使用<code>unsafe.Pointer</code>将<code>oldValue</code>和<code>newValue</code>转换成<code>ifaceWords</code>类型。方便我们获取他的原始类型(typ)和值(data).</li>
+<li>为了保证原子性，所以这里使用一个<code>for</code>换来处理，当已经有<code>Store</code>正在进行写入时，会进行等待.</li>
+<li>如果还没写入过数据，那么获取不到原始类型，就会开始第一次写入操作，这里会把先调用<code>runtime_procPin()</code>方法禁止调度器对当前 goroutine 的抢占（preemption），这样也可以防止<code>GC</code>线程看到假类型。</li>
+<li>调用<code>CAS</code>方法来判断当前地址是否有被抢占，这里大家可能对<code>unsafe.Pointer(^uintptr(0))</code>这一句话有点不明白，因为是第一个写入数据，之前是没有数据的，所以通过这样一个中间值来做判断，如果失败就会解除抢占锁，解除禁止调度器，继续循环等待.</li>
+<li>设置中间值成功后，我们接下来就可以安全的把<code>v</code>设为传入的新值了，这里会先写入值，在写入类型(typ)，因为我们会根据ty来做完成判断。</li>
+<li>第一次写入没完成，我们还会通过<code>uintptr(typ) == ^uintptr(0)</code>来进行判断，因为还是第一次放入的中间类型，他依然会继续等待第一次完成。</li>
+<li>如果第一次写入完成，会检查上一次写入的类型与这次写入的类型是否一致，不一致则会抛出<code>panic</code>.</li>
+</ol>
+<p>这里代码量没有多少，相信大家一定看懂了吧～。</p>
+<h3 id="value的读操作">
+  <code>Value</code>的读操作
+  <a class="anchor" href="#value%e7%9a%84%e8%af%bb%e6%93%8d%e4%bd%9c">#</a>
+</h3>
+<p>先看一下代码：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Load returns the value set by the most recent Store.
+</span><span style="color:#75715e">// It returns nil if there has been no call to Store for this Value.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">v</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Value</span>) <span style="color:#a6e22e">Load</span>() (<span style="color:#a6e22e">x</span> <span style="color:#66d9ef">interface</span>{}) {
+ <span style="color:#a6e22e">vp</span> <span style="color:#f92672">:=</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">ifaceWords</span>)(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#a6e22e">v</span>))
+ <span style="color:#a6e22e">typ</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">LoadPointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">typ</span>)
+ <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">typ</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> <span style="color:#f92672">||</span> uintptr(<span style="color:#a6e22e">typ</span>) <span style="color:#f92672">==</span> ^uintptr(<span style="color:#ae81ff">0</span>) {
+  <span style="color:#75715e">// First store not yet completed.
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+ }
+ <span style="color:#a6e22e">data</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">LoadPointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">vp</span>.<span style="color:#a6e22e">data</span>)
+ <span style="color:#a6e22e">xp</span> <span style="color:#f92672">:=</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">ifaceWords</span>)(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">x</span>))
+ <span style="color:#a6e22e">xp</span>.<span style="color:#a6e22e">typ</span> = <span style="color:#a6e22e">typ</span>
+ <span style="color:#a6e22e">xp</span>.<span style="color:#a6e22e">data</span> = <span style="color:#a6e22e">data</span>
+ <span style="color:#66d9ef">return</span>
+}
+</code></pre></div><p>读取操作的代码就很简单了：1.第一步使用<code>unsafe.Pointer</code>将<code>oldValue</code>转换成<code>ifaceWords</code>类型，然后获取他的类型，如果没有类型或者类型出去中间值，那么说明现在还没数据或者第一次写入还没有完成。2. 通过检查后，调用<code>LoadPointer</code>方法可以获取他的值，然后构造一个新<code>interface</code>的<code>typ</code>和<code>data</code>返回。</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#go语言中如何进行原子操作">go语言中如何进行原子操作</a></li>
+    <li><a href="#源码解析">源码解析</a>
+      <ul>
+        <li><a href="#value结构"><code>Value</code>结构</a></li>
+        <li><a href="#value的写入操作"><code>Value</code>的写入操作</a></li>
+        <li><a href="#value的读操作"><code>Value</code>的读操作</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

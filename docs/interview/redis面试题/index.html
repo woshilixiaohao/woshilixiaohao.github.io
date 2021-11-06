@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="题目 #   用什么数据结构保存键值对 rehash过程 集合底层数据结构 IO多路复用 AOF保存数据，写回策略三种，AOF重写 RDB，save/bgsave，Copy on write，AOF&#43;RDB 主从，第一次，全量复制、长连接复制、增量复制 哨兵、3个任务，监控、选主、通知 哨兵选主，筛选&#43;打分 哨兵集群组成 pub/sub，主库、从库都怎么获取信息，哨兵怎么知道对方，哨兵怎么知道从库 由哪个哨兵执行主从切换 String占用内存大的坑，压缩列表方式 GEO能用来做什么 聚合统计、排序、二值、基数，分别用什么数据类型 Redis基本对象结构 Redis保存时间序列数据2种方式 redis消息队列有哪些 redis单线程模型阻塞点有哪些、哪些可以异步、每个阻塞点解决方案 cpu对redis影响，多核、多CPU的NUMA 判断redis变慢的方法 redis慢查询、过期key  获取Redis实例在当前环境下的基线性能。 是否用了慢查询命令？如果是的话，就使用其他命令替代慢查询命令，或者把聚合计算命令放在客?端 做。 是否对过期key设置了相同的过期时间？对于批量删除的key，可以在每个key的过期时间上加一个随机 数，避免同时删除。 是否存在bigkey？ 对于bigkey的删除操作，如果你的Redis是4.0及以上的版本，可以直接利用异步线程 机制减少主线程阻塞；如果是Redis 4.0以前的版本，可以使用SCAN命令迭代删除；对于bigkey的集合查 询和聚合操作，可以使用SCAN命令在客户端完成。 Redis AOF配置级别是什么？业务层?是否的确需要这一可靠性级别？如果我们需要高性能，同时也允许 数据丢失，可以将配置项no-appendfsync-on-rewrite设置为yes，避免AOF重写和fsync竞争磁盘IO资 源，导致Redis延迟增加。当然， 如果既需要高性能又需要高可靠性，最好使用速固态盘作为AOF日志 的写入盘。 Redis实例的内存使用是否过大？发生swap了吗？如果是的话，就增加机器内存，或者是使用Redis集 群，分摊单机Redis的键值对数量和内存压力。同时，要避免出现Redis和其他内存需求大的应用共享机 器的情况。 在Redis实例的运行环境中，是否启用了透明大页机制？如果是的话，直接关闭内存大页机制就行了。 是否运行了Redis主从集群？如果是的话，把主库实例的数据量大小控制在2~4GB，以免主从复制时，从 库因加载大的RDB文件而阻塞。 是否使用了多核CPU或NUMA架构的机器运行Redis实例？使用多核CPU时，可以给Redis实例绑定物理 核；使用NUMA架构时，注意把Redis实例和网络中断处理程序运行在同一个CPU Socket上。   redis内存效率 三个一 ，INFO、碎片率阈值、内存碎片自动清理 缓冲区溢出会导致结果？输入缓冲区溢出、输出缓冲区溢出解决方案？数据发送过快过大，数据处理慢、缓冲区小 缓存类型？只读缓存、读写缓存。缓存建议容量？缓存淘汰策略，3类，8种。LRU的redis实现，第一次，第二次 冷热数据区分、没有冷热数据区分、有置顶数据的，用什么策略好 缓存一致性，先更库再删redis，先删redis再更库 缓存雪崩、击穿、穿透 缓存污染、LRU LRF Redis原子操作？ 分布式锁 ACID 主从故障：主从数据不一致，读取过期数据，不合理配置项 脑裂原因、配置参数 秒杀 数据量倾斜，数据访问倾斜  ">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
+<meta property="og:description" content="题目 #   用什么数据结构保存键值对 rehash过程 集合底层数据结构 IO多路复用 AOF保存数据，写回策略三种，AOF重写 RDB，save/bgsave，Copy on write，AOF&#43;RDB 主从，第一次，全量复制、长连接复制、增量复制 哨兵、3个任务，监控、选主、通知 哨兵选主，筛选&#43;打分 哨兵集群组成 pub/sub，主库、从库都怎么获取信息，哨兵怎么知道对方，哨兵怎么知道从库 由哪个哨兵执行主从切换 String占用内存大的坑，压缩列表方式 GEO能用来做什么 聚合统计、排序、二值、基数，分别用什么数据类型 Redis基本对象结构 Redis保存时间序列数据2种方式 redis消息队列有哪些 redis单线程模型阻塞点有哪些、哪些可以异步、每个阻塞点解决方案 cpu对redis影响，多核、多CPU的NUMA 判断redis变慢的方法 redis慢查询、过期key  获取Redis实例在当前环境下的基线性能。 是否用了慢查询命令？如果是的话，就使用其他命令替代慢查询命令，或者把聚合计算命令放在客?端 做。 是否对过期key设置了相同的过期时间？对于批量删除的key，可以在每个key的过期时间上加一个随机 数，避免同时删除。 是否存在bigkey？ 对于bigkey的删除操作，如果你的Redis是4.0及以上的版本，可以直接利用异步线程 机制减少主线程阻塞；如果是Redis 4.0以前的版本，可以使用SCAN命令迭代删除；对于bigkey的集合查 询和聚合操作，可以使用SCAN命令在客户端完成。 Redis AOF配置级别是什么？业务层?是否的确需要这一可靠性级别？如果我们需要高性能，同时也允许 数据丢失，可以将配置项no-appendfsync-on-rewrite设置为yes，避免AOF重写和fsync竞争磁盘IO资 源，导致Redis延迟增加。当然， 如果既需要高性能又需要高可靠性，最好使用速固态盘作为AOF日志 的写入盘。 Redis实例的内存使用是否过大？发生swap了吗？如果是的话，就增加机器内存，或者是使用Redis集 群，分摊单机Redis的键值对数量和内存压力。同时，要避免出现Redis和其他内存需求大的应用共享机 器的情况。 在Redis实例的运行环境中，是否启用了透明大页机制？如果是的话，直接关闭内存大页机制就行了。 是否运行了Redis主从集群？如果是的话，把主库实例的数据量大小控制在2~4GB，以免主从复制时，从 库因加载大的RDB文件而阻塞。 是否使用了多核CPU或NUMA架构的机器运行Redis实例？使用多核CPU时，可以给Redis实例绑定物理 核；使用NUMA架构时，注意把Redis实例和网络中断处理程序运行在同一个CPU Socket上。   redis内存效率 三个一 ，INFO、碎片率阈值、内存碎片自动清理 缓冲区溢出会导致结果？输入缓冲区溢出、输出缓冲区溢出解决方案？数据发送过快过大，数据处理慢、缓冲区小 缓存类型？只读缓存、读写缓存。缓存建议容量？缓存淘汰策略，3类，8种。LRU的redis实现，第一次，第二次 冷热数据区分、没有冷热数据区分、有置顶数据的，用什么策略好 缓存一致性，先更库再删redis，先删redis再更库 缓存雪崩、击穿、穿透 缓存污染、LRU LRF Redis原子操作？ 分布式锁 ACID 主从故障：主从数据不一致，读取过期数据，不合理配置项 脑裂原因、配置参数 秒杀 数据量倾斜，数据访问倾斜  " />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" /><meta property="article:section" content="docs" />
+
+
+
+<title>Redis面试题 | 老三炮的笔记</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.55521e020be85709ff7a38b6c916ae95096e8bcaa216ac4aaaff69e27781036c.js" integrity="sha256-VVIeAgvoVwn/eji2yRaulQlui8qiFqxKqv9p4neBA2w=" crossorigin="anonymous"></script>
+
+  <script defer src="/sw.min.6f6f90fcb8eb1c49ec389838e6b801d0de19430b8e516902f8d75c3c8bd98739.js" integrity="sha256-b2&#43;Q/LjrHEnsOJg45rgB0N4ZQwuOUWkC&#43;NdcPIvZhzk=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>老三炮的笔记</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/" class="">Interview</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/mysql%E9%9D%A2%E8%AF%95%E9%A2%98/" class="">Mysql面试题</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/interview/redis%E9%9D%A2%E8%AF%95%E9%A2%98/" class=" active">Redis面试题</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/" class="">Tech</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/" class="">Db</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/db/mysql/" class="">Mysql</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/" class="">Go</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/atomic%E5%8C%85%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" class="">Atomic包源码解析</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/golang%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D/" class="">Golang内存分配</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/go%E5%B8%B8%E7%94%A8%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="">Go常用设计模式</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/go/unsafe%E5%8C%85/" class="">Unsafe包</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/" class="">Java</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/java/java-test/" class="">Java Test</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/" class="">Mq</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/mq/kafka/" class="">Kafka</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/" class="">Nosql</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/elasticsearch/" class="">Elasticsearch</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://woshilixiaohao.github.io/docs/tech/nosql/redis/" class="">Redis</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Redis面试题</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#题目">题目</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h3 id="题目">
+  题目
+  <a class="anchor" href="#%e9%a2%98%e7%9b%ae">#</a>
+</h3>
+<ol>
+<li>用什么数据结构保存键值对</li>
+<li>rehash过程</li>
+<li>集合底层数据结构</li>
+<li>IO多路复用</li>
+<li>AOF保存数据，写回策略三种，AOF重写</li>
+<li>RDB，save/bgsave，Copy on write，AOF+RDB</li>
+<li>主从，第一次，全量复制、长连接复制、增量复制</li>
+<li>哨兵、3个任务，监控、选主、通知</li>
+<li>哨兵选主，筛选+打分</li>
+<li>哨兵集群组成 pub/sub，主库、从库都怎么获取信息，哨兵怎么知道对方，哨兵怎么知道从库</li>
+<li>由哪个哨兵执行主从切换</li>
+<li>String占用内存大的坑，压缩列表方式</li>
+<li>GEO能用来做什么</li>
+<li>聚合统计、排序、二值、基数，分别用什么数据类型</li>
+<li>Redis基本对象结构</li>
+<li>Redis保存时间序列数据2种方式</li>
+<li>redis消息队列有哪些</li>
+<li>redis单线程模型阻塞点有哪些、哪些可以异步、每个阻塞点解决方案</li>
+<li>cpu对redis影响，多核、多CPU的NUMA</li>
+<li>判断redis变慢的方法</li>
+<li>redis慢查询、过期key
+<ol>
+<li>获取Redis实例在当前环境下的基线性能。</li>
+<li>是否用了慢查询命令？如果是的话，就使用其他命令替代慢查询命令，或者把聚合计算命令放在客?端
+做。</li>
+<li>是否对过期key设置了相同的过期时间？对于批量删除的key，可以在每个key的过期时间上加一个随机
+数，避免同时删除。</li>
+<li>是否存在bigkey？ 对于bigkey的删除操作，如果你的Redis是4.0及以上的版本，可以直接利用异步线程
+机制减少主线程阻塞；如果是Redis 4.0以前的版本，可以使用SCAN命令迭代删除；对于bigkey的集合查
+询和聚合操作，可以使用SCAN命令在客户端完成。</li>
+<li>Redis AOF配置级别是什么？业务层?是否的确需要这一可靠性级别？如果我们需要高性能，同时也允许
+数据丢失，可以将配置项no-appendfsync-on-rewrite设置为yes，避免AOF重写和fsync竞争磁盘IO资
+源，导致Redis延迟增加。当然， 如果既需要高性能又需要高可靠性，最好使用速固态盘作为AOF日志
+的写入盘。</li>
+<li>Redis实例的内存使用是否过大？发生swap了吗？如果是的话，就增加机器内存，或者是使用Redis集
+群，分摊单机Redis的键值对数量和内存压力。同时，要避免出现Redis和其他内存需求大的应用共享机
+器的情况。</li>
+<li>在Redis实例的运行环境中，是否启用了透明大页机制？如果是的话，直接关闭内存大页机制就行了。</li>
+<li>是否运行了Redis主从集群？如果是的话，把主库实例的数据量大小控制在2~4GB，以免主从复制时，从
+库因加载大的RDB文件而阻塞。</li>
+<li>是否使用了多核CPU或NUMA架构的机器运行Redis实例？使用多核CPU时，可以给Redis实例绑定物理
+核；使用NUMA架构时，注意把Redis实例和网络中断处理程序运行在同一个CPU Socket上。</li>
+</ol>
+</li>
+<li>redis内存效率 三个一  ，INFO、碎片率阈值、内存碎片自动清理</li>
+<li>缓冲区溢出会导致结果？输入缓冲区溢出、输出缓冲区溢出解决方案？数据发送过快过大，数据处理慢、缓冲区小</li>
+<li>缓存类型？只读缓存、读写缓存。缓存建议容量？缓存淘汰策略，3类，8种。LRU的redis实现，第一次，第二次
+冷热数据区分、没有冷热数据区分、有置顶数据的，用什么策略好</li>
+<li>缓存一致性，先更库再删redis，先删redis再更库</li>
+<li>缓存雪崩、击穿、穿透</li>
+<li>缓存污染、LRU LRF</li>
+<li>Redis原子操作？</li>
+<li>分布式锁</li>
+<li>ACID</li>
+<li>主从故障：主从数据不一致，读取过期数据，不合理配置项</li>
+<li>脑裂原因、配置参数</li>
+<li>秒杀</li>
+<li>数据量倾斜，数据访问倾斜</li>
+</ol>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#题目">题目</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
